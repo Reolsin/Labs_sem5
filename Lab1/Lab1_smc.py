@@ -1,4 +1,4 @@
-from smc import Lab1_sm
+import Lab1_sm
 
 def my_split(string, separate_symols: list):
 

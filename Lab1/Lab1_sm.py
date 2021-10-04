@@ -35,15 +35,38 @@ class Name_checkerState(statemap.State):
         raise statemap.TransitionUndefinedException(msg)
 
 class NameMap_Default(Name_checkerState):
-    pass
 
-class NameMap_Start(NameMap_Default):
+    def get_header(self, fsm, h):
+        fsm.getState().Exit(fsm)
+        fsm.setState(NameMap.ERROR)
+        fsm.getState().Entry(fsm)
+
+
+    def get_port(self, fsm):
+        fsm.getState().Exit(fsm)
+        fsm.setState(NameMap.ERROR)
+        fsm.getState().Entry(fsm)
+
+
+    def get_name(self, fsm):
+        fsm.getState().Exit(fsm)
+        fsm.setState(NameMap.ERROR)
+        fsm.getState().Entry(fsm)
+
+
+    def get_pass(self, fsm):
+        fsm.getState().Exit(fsm)
+        fsm.setState(NameMap.ERROR)
+        fsm.getState().Entry(fsm)
+
 
     def end(self, fsm):
         fsm.getState().Exit(fsm)
         fsm.setState(NameMap.ERROR)
         fsm.getState().Entry(fsm)
 
+
+class NameMap_Start(NameMap_Default):
 
     def get_header(self, fsm, h):
         ctxt = fsm.getOwner()
@@ -56,47 +79,11 @@ class NameMap_Start(NameMap_Default):
             fsm.getState().Entry(fsm)
 
 
-    def get_name(self, fsm):
-        fsm.getState().Exit(fsm)
-        fsm.setState(NameMap.ERROR)
-        fsm.getState().Entry(fsm)
-
-
-    def get_pass(self, fsm):
-        fsm.getState().Exit(fsm)
-        fsm.setState(NameMap.ERROR)
-        fsm.getState().Entry(fsm)
-
-
-    def get_port(self, fsm):
-        fsm.getState().Exit(fsm)
-        fsm.setState(NameMap.ERROR)
-        fsm.getState().Entry(fsm)
-
-
 class NameMap_Header(NameMap_Default):
 
     def end(self, fsm):
         fsm.getState().Exit(fsm)
         fsm.setState(NameMap.OK)
-        fsm.getState().Entry(fsm)
-
-
-    def get_header(self, fsm, h):
-        fsm.getState().Exit(fsm)
-        fsm.setState(NameMap.ERROR)
-        fsm.getState().Entry(fsm)
-
-
-    def get_name(self, fsm):
-        fsm.getState().Exit(fsm)
-        fsm.setState(NameMap.ERROR)
-        fsm.getState().Entry(fsm)
-
-
-    def get_pass(self, fsm):
-        fsm.getState().Exit(fsm)
-        fsm.setState(NameMap.ERROR)
         fsm.getState().Entry(fsm)
 
 
@@ -114,27 +101,9 @@ class NameMap_Port(NameMap_Default):
         fsm.getState().Entry(fsm)
 
 
-    def get_header(self, fsm, h):
-        fsm.getState().Exit(fsm)
-        fsm.setState(NameMap.ERROR)
-        fsm.getState().Entry(fsm)
-
-
     def get_name(self, fsm):
         fsm.getState().Exit(fsm)
         fsm.setState(NameMap.Name)
-        fsm.getState().Entry(fsm)
-
-
-    def get_pass(self, fsm):
-        fsm.getState().Exit(fsm)
-        fsm.setState(NameMap.ERROR)
-        fsm.getState().Entry(fsm)
-
-
-    def get_port(self, fsm):
-        fsm.getState().Exit(fsm)
-        fsm.setState(NameMap.ERROR)
         fsm.getState().Entry(fsm)
 
 
@@ -146,27 +115,9 @@ class NameMap_Name(NameMap_Default):
         fsm.getState().Entry(fsm)
 
 
-    def get_header(self, fsm, h):
-        fsm.getState().Exit(fsm)
-        fsm.setState(NameMap.ERROR)
-        fsm.getState().Entry(fsm)
-
-
-    def get_name(self, fsm):
-        fsm.getState().Exit(fsm)
-        fsm.setState(NameMap.ERROR)
-        fsm.getState().Entry(fsm)
-
-
     def get_pass(self, fsm):
         fsm.getState().Exit(fsm)
         fsm.setState(NameMap.Pass)
-        fsm.getState().Entry(fsm)
-
-
-    def get_port(self, fsm):
-        fsm.getState().Exit(fsm)
-        fsm.setState(NameMap.ERROR)
         fsm.getState().Entry(fsm)
 
 
@@ -178,69 +129,11 @@ class NameMap_Pass(NameMap_Default):
         fsm.getState().Entry(fsm)
 
 
-    def get_header(self, fsm, h):
-        fsm.getState().Exit(fsm)
-        fsm.setState(NameMap.ERROR)
-        fsm.getState().Entry(fsm)
-
-
-    def get_name(self, fsm):
-        fsm.getState().Exit(fsm)
-        fsm.setState(NameMap.ERROR)
-        fsm.getState().Entry(fsm)
-
-
-    def get_pass(self, fsm):
-        fsm.getState().Exit(fsm)
-        fsm.setState(NameMap.ERROR)
-        fsm.getState().Entry(fsm)
-
-
-    def get_port(self, fsm):
-        fsm.getState().Exit(fsm)
-        fsm.setState(NameMap.ERROR)
-        fsm.getState().Entry(fsm)
-
-
 class NameMap_OK(NameMap_Default):
-
-    def end(self, fsm):
-        fsm.getState().Exit(fsm)
-        fsm.setState(NameMap.ERROR)
-        fsm.getState().Entry(fsm)
-
+    pass
 
 class NameMap_ERROR(NameMap_Default):
-
-    def end(self, fsm):
-        fsm.getState().Exit(fsm)
-        fsm.setState(NameMap.ERROR)
-        fsm.getState().Entry(fsm)
-
-
-    def get_header(self, fsm, h):
-        fsm.getState().Exit(fsm)
-        fsm.setState(NameMap.ERROR)
-        fsm.getState().Entry(fsm)
-
-
-    def get_name(self, fsm):
-        fsm.getState().Exit(fsm)
-        fsm.setState(NameMap.ERROR)
-        fsm.getState().Entry(fsm)
-
-
-    def get_pass(self, fsm):
-        fsm.getState().Exit(fsm)
-        fsm.setState(NameMap.ERROR)
-        fsm.getState().Entry(fsm)
-
-
-    def get_port(self, fsm):
-        fsm.getState().Exit(fsm)
-        fsm.setState(NameMap.ERROR)
-        fsm.getState().Entry(fsm)
-
+    pass
 
 class NameMap(object):
 
