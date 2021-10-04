@@ -1,0 +1,16 @@
+irc://serv123456:65535/login123?pass123,correct
+irc://serv123456:65535/login123?,wrong
+irc://serv123456:65535/login123,correct
+irc://serv123456:65535/,wrong
+irc://serv123456:65535,correct
+irc://serv123456:,wrong
+irc://serv123456,correct
+irc://,wrong
+irc://serv123:123/login123?pass123sssssssssssssssssssssssssssssssssssssssssssssssssss,wrong
+irc:///serv123456:65535/login123?pass123,wrong
+irc://serv123456::65535/login123?pass123,wrong
+irc://serv123456:65535/login123??pass123,wrong
+irc://serv123456:65535/login123?pass123_,wrong
+irc://serv123456:65535/login123?_,wrong
+irc://serv123456:65535/_,wrong
+irc://serv123456:,wrong

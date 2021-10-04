@@ -1,0 +1,16 @@
+irc://serv123456:65535/login123?pass123
+irc://serv123456:65535/login123?
+irc://serv123456:65535/login123
+irc://serv123456:65535/
+irc://serv123456:65535
+irc://serv123456:
+irc://serv123456
+irc://
+irc://serv123:123/login123?pass123sssssssssssssssssssssssssssssssssssssssssssssssssss
+irc:///serv123456:65535/login123?pass123
+irc://serv123456::65535/login123?pass123
+irc://serv123456:65535/login123??pass123
+irc://serv123456:65535/login123?pass123_
+irc://serv123456:65535/login123?_
+irc://serv123456:65535/_
+irc://serv123456:_

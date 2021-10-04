@@ -1,0 +1,50 @@
+%class Name_checker
+%start NameMap::Start
+%map NameMap
+%%
+Start {
+    get_header(h) Header { remember(h); }
+    get_port ERROR {}
+    get_name ERROR {}
+    get_pass ERROR {}
+    end ERROR {}
+}
+Header {
+    get_port Port {}
+    end OK {}
+    get_header(h) ERROR {}
+    get_name ERROR {}
+    get_pass ERROR {}
+}
+Port {
+    get_name Name {}
+    end OK {}
+    get_header(h) ERROR {}
+    get_port ERROR {}
+    get_pass ERROR {}
+}
+Name {
+    get_pass Pass {}
+    end OK {}
+    get_header(h) ERROR {}
+    get_port ERROR {}
+    get_name ERROR {}
+}
+Pass {
+    end OK {}
+    get_header(h) ERROR {}
+    get_port ERROR {}
+    get_name ERROR {}
+    get_pass ERROR {}
+}
+OK {
+    end ERROR {}
+}
+ERROR {
+    get_header(h) ERROR {}
+    get_port ERROR {}
+    get_name ERROR {}
+    get_pass ERROR {}
+    end ERROR {}
+}
+%%
