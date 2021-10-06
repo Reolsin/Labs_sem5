@@ -7,7 +7,7 @@ import csv
 
 
 with open('2.txt', 'r') as input_file:
-    output_file = open('timing.csv', 'w')
+    output_file = open('output/timing.csv', 'w')
     writer = csv.writer(output_file)
     t1 = time.perf_counter_ns()
     for string in [line[:-1] for line in input_file]:
