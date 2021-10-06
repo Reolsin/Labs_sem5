@@ -1,0 +1,150 @@
+digraph Lab1 {
+
+    node
+        [shape=Mrecord width=1.5];
+
+    subgraph cluster_NameMap {
+
+        label="NameMap";
+
+        //
+        // States (Nodes)
+        //
+
+        "NameMap::Start"
+            [label="{Start}"];
+
+        "NameMap::Header"
+            [label="{Header}"];
+
+        "NameMap::Port"
+            [label="{Port}"];
+
+        "NameMap::Name"
+            [label="{Name}"];
+
+        "NameMap::Pass"
+            [label="{Pass}"];
+
+        "NameMap::OK"
+            [label="{OK}"];
+
+        "NameMap::ERROR"
+            [label="{ERROR}"];
+
+        "%start"
+            [label="" shape=circle style=filled fillcolor=black width=0.25];
+
+        //
+        // Transitions (Edges)
+        //
+
+        "NameMap::Start" -> "NameMap::Header"
+            [label="get_header/\l"];
+
+        "NameMap::Start" -> "NameMap::ERROR"
+            [label="get_port/\l"];
+
+        "NameMap::Start" -> "NameMap::ERROR"
+            [label="get_name/\l"];
+
+        "NameMap::Start" -> "NameMap::ERROR"
+            [label="get_pass/\l"];
+
+        "NameMap::Start" -> "NameMap::ERROR"
+            [label="end/\l"];
+
+        "NameMap::Header" -> "NameMap::Port"
+            [label="get_port/\l"];
+
+        "NameMap::Header" -> "NameMap::OK"
+            [label="end/\l"];
+
+        "NameMap::Header" -> "NameMap::ERROR"
+            [label="get_header/\l"];
+
+        "NameMap::Header" -> "NameMap::ERROR"
+            [label="get_name/\l"];
+
+        "NameMap::Header" -> "NameMap::ERROR"
+            [label="get_pass/\l"];
+
+        "NameMap::Port" -> "NameMap::Name"
+            [label="get_name/\l"];
+
+        "NameMap::Port" -> "NameMap::OK"
+            [label="end/\l"];
+
+        "NameMap::Port" -> "NameMap::ERROR"
+            [label="get_header/\l"];
+
+        "NameMap::Port" -> "NameMap::ERROR"
+            [label="get_port/\l"];
+
+        "NameMap::Port" -> "NameMap::ERROR"
+            [label="get_pass/\l"];
+
+        "NameMap::Name" -> "NameMap::Pass"
+            [label="get_pass/\l"];
+
+        "NameMap::Name" -> "NameMap::OK"
+            [label="end/\l"];
+
+        "NameMap::Name" -> "NameMap::ERROR"
+            [label="get_header/\l"];
+
+        "NameMap::Name" -> "NameMap::ERROR"
+            [label="get_port/\l"];
+
+        "NameMap::Name" -> "NameMap::ERROR"
+            [label="get_name/\l"];
+
+        "NameMap::Pass" -> "NameMap::OK"
+            [label="end/\l"];
+
+        "NameMap::Pass" -> "NameMap::ERROR"
+            [label="get_header/\l"];
+
+        "NameMap::Pass" -> "NameMap::ERROR"
+            [label="get_port/\l"];
+
+        "NameMap::Pass" -> "NameMap::ERROR"
+            [label="get_name/\l"];
+
+        "NameMap::Pass" -> "NameMap::ERROR"
+            [label="get_pass/\l"];
+
+        "NameMap::OK" -> "NameMap::ERROR"
+            [label="get_header/\l"];
+
+        "NameMap::OK" -> "NameMap::ERROR"
+            [label="get_port/\l"];
+
+        "NameMap::OK" -> "NameMap::ERROR"
+            [label="get_name/\l"];
+
+        "NameMap::OK" -> "NameMap::ERROR"
+            [label="get_pass/\l"];
+
+        "NameMap::OK" -> "NameMap::ERROR"
+            [label="end/\l"];
+
+        "NameMap::ERROR" -> "NameMap::ERROR"
+            [label="get_header/\l"];
+
+        "NameMap::ERROR" -> "NameMap::ERROR"
+            [label="get_port/\l"];
+
+        "NameMap::ERROR" -> "NameMap::ERROR"
+            [label="get_name/\l"];
+
+        "NameMap::ERROR" -> "NameMap::ERROR"
+            [label="get_pass/\l"];
+
+        "NameMap::ERROR" -> "NameMap::ERROR"
+            [label="end/\l"];
+
+        "%start" -> "NameMap::Start"
+    }
+
+}
