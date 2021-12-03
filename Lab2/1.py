@@ -1,16 +1,7 @@
-
-class Token:
-
-    def __init__(self, type):
-        self.type = type
-
-    def __str__(self):
-        return "['"+ self.token + "', " + self.type +']'
-
 class Tree:
 
-    def __init__(self, token: Token, kids: list):
-        self.token = token
+    def __init__(self, value, kids: list):
+        self.value = value
         self.kids = kids
 
     def add_kid(self, kid):
@@ -42,7 +33,6 @@ class myre_compile(object):
 
 
 class myre_findall(object):
-
 
     def __init__(self, regex: str, string: str):
 
@@ -89,6 +79,18 @@ def find_bracket_group(regex, start, end):
     
     return start, end
 
+def generate_groups(groups: list, regex: str):
+    start, end = -1, len(regex)
+    t = 0
+
+    while end != t:
+        groups.append(regex[start + 1:end])
+        t = end
+        start, end = find_bracket_group(regex, start, end)
+        if t == end:
+            start, end, t = end, len(regex), len(regex)
+            start, end = find_bracket_group(regex, start, end)
+
 def brackets_is_correct(regex):
     count = 0
     for i in regex:
@@ -102,18 +104,6 @@ def brackets_is_correct(regex):
         return True
     else:
         return False
-
-def generate_groups(groups: list, regex: str):
-    start, end = -1, len(regex)
-    t = 0
-
-    while end != t:
-        groups.append(regex[start + 1:end])
-        t = end
-        start, end = find_bracket_group(regex, start, end)
-        if t == end:
-            start, end, t = end, len(regex), len(regex)
-            start, end = find_bracket_group(regex, start, end)
 
 
 def splt(string: str, s: str):
@@ -135,3 +125,8 @@ def splt(string: str, s: str):
     res.append(string[start:end])           
     
     return res
+
+
+groups = []
+generate_groups(groups, '(asd)(asdas)')
+print(groups)
