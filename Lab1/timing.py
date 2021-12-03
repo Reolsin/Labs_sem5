@@ -19,8 +19,9 @@ with open('output/generated_sequence.csv') as input_f:
     output_f = open('output/timing.csv', 'w')
     writer = csv.writer(output_f)
 
-    t1 = time.perf_counter_ns()
+
     for i in range(len(sources)):
+        t1 = time.perf_counter_ns()
         for row in sources[i]:
             Check_my2(row[0])
         t2 = time.perf_counter_ns()

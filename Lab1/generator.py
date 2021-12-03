@@ -7,12 +7,11 @@ max_len = 80
 
 digits = '123456789'
 Ok_symbols = 'qwertyuiopasdfghjklzxcvbnm' + digits
-Er_symbols = ' _%^[]{}<>#@'
 
 
 str_len = 0
 
-def gen_token(key, correct, length, i):
+def gen_token(key, length, i):
     global str_len
     token = list(template[key])
 
@@ -31,10 +30,6 @@ def gen_token(key, correct, length, i):
         n = randint(1, p)
         token += [Ok_symbols[randrange(0, len(Ok_symbols))] for _ in range(n)]
     str_len += n
-
-    if not correct:
-        for i in range(randrange(0, len(token) // 5 + 1)):
-            token[randrange(0, len(token))] = Er_symbols[randrange(0, len(Er_symbols))]
     
     return ''.join(token)
 
@@ -46,7 +41,11 @@ def generator(number: int):
     for n in range(number):
         length = randint(1, 4)
         correct = randint(0, 1)
-        string = ''.join([gen_token(keys[i], correct, length, i) for i in range(len(keys)) if i < length])
+        string = ''.join([gen_token(keys[i], length, i) for i in range(len(keys)) if i < length])
+        if not correct:
+            for i in range(randint(1, (len(string) // 10) + 1)):
+                k = randrange(1, len(string) - 1)
+                string = string[0:k] + ' ' + string[k+1:]
         str_len = 0
 
         res.append([string, correct, length])

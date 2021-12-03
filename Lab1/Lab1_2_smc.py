@@ -18,7 +18,7 @@ class SMCParser():
 
     def parse(self, input_: str):
         self.clear()
-        if len(input_) > 80:
+        if len(input_.lower()) > 80:
             return None
         for s in input_:
             if s == '/':
