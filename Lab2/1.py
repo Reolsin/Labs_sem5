@@ -71,29 +71,6 @@ class myre(object):
 
         return myre_findall(regex, string)
 
-    def _findall(regex, string):
-
-        s = 0
-        r = 0
-        start = -1
-        res = []
-        while r != len(regex) and s != len(string):
-            if string[s] == regex[r]:
-                start = s
-                while r != len(regex) and s != len(string) and string[s] == regex[r]:
-                    s+=1
-                    r+=1
-                if r == len(regex):
-                    res.append(string[start:s])
-                    s-=1
-                else:
-                    s = start
-                r = 0
-            s+=1
-
-        return res
-
-
 
 
 def find_bracket_group(regex, start, end):
