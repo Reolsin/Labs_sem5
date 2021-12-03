@@ -158,29 +158,3 @@ def splt(string: str, s: str):
     res.append(string[start:end])           
     
     return res
-
-
-def check_postfix(string):
-    res = []
-    
-
-    return res
-
-def tree_generator(regex: str, root: Tree):
-
-    nodes = splt(regex, '|')
-    if len(nodes) > 1:
-        tree = Tree(Token('|'), nodes)
-        root.add_kid(tree)
-        for kid in tree.kids:
-            tree_generator(kid, tree)
-        return
-    nodes = check_postfix(regex)
-
-root = Tree(Token('root'), [])
-
-print(splt('asd|asd', '|'))
-
-tree_generator('asd|asds|asdasdasd', root)
-
-print(root)

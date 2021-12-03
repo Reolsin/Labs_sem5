@@ -31,7 +31,7 @@ class Token:
         return self.value
 
 
-symbols = set(['*', '|', '{', '}', '%', '(', ')'])
+symbols = set(['*', '|', '{', '}', '%', '(', ')', '?'])
 
 def Parser(regex):
     tokens = []
@@ -48,7 +48,7 @@ def Parser(regex):
              if i+2 < len(regex) and regex[i+2] == '}':
                 tokens.append(Token('token', int(regex[i+1])))
                 i += 2
-        elif regex[i] == '(' or regex[i] == ')' or regex[i] == '*' or regex[i] == '|':
+        elif regex[i] == '(' or regex[i] == ')' or regex[i] == '*' or regex[i] == '|' or regex[i] == '?':
             tokens.append(Token('token', regex[i]))
         i += 1
 
@@ -95,7 +95,7 @@ def tree_builder(tokens: list):
                 groot = BinTree(tokens[i], groot, None)
                 parent = groot
 
-            elif tokens[i] == '*' or type(tokens[i].value) == int:
+            elif tokens[i] == '*' or tokens[i] == '?' or type(tokens[i].value) == int:
                 if parent:
                     if parent.right:
                         parent.right = BinTree(tokens[i], parent.right, None)
@@ -108,32 +108,32 @@ def tree_builder(tokens: list):
     return tokens[0]
 
     
-def tree_builder_2(tokens: list):
-    first, last = find_pair(tokens)
-    while first != -1:
-        Nodes = []
-        i = -1
-        while '|' in tokens:
-            t = tokens[i+1:].index('|')
-            Nodes.append(tokens[i+1:t])
-            i = t
-        Nodes.append(tokens[i+1:])
+# def tree_builder_2(tokens: list):
+#     first, last = find_pair(tokens)
+#     while first != -1:
+#         Nodes = []
+#         i = -1
+#         while '|' in tokens:
+#             t = tokens[i+1:].index('|')
+#             Nodes.append(tokens[i+1:t])
+#             i = t
+#         Nodes.append(tokens[i+1:])
 
-        if len(Nodes) > 1:
-            group_root = BinTree(Token('token', '|'), Nodes[0], Nodes[1])
-            cur = group_root.right
-            parent = group_root
-            for i in range(2,len(Nodes)):
-                parent.right = BinTree(Token('token', '|'), cur, Nodes[i])
-                parent = parent.right
-                cur = parent.right
-        else:
-            group_root = BinTree(Nodes[0], None, None)
+#         if len(Nodes) > 1:
+#             group_root = BinTree(Token('token', '|'), Nodes[0], Nodes[1])
+#             cur = group_root.right
+#             parent = group_root
+#             for i in range(2,len(Nodes)):
+#                 parent.right = BinTree(Token('token', '|'), cur, Nodes[i])
+#                 parent = parent.right
+#                 cur = parent.right
+#         else:
+#             group_root = BinTree(Nodes[0], None, None)
 
-    tokens = tokens[:first] + tokens[last+1:]
-    first, last = find_pair(tokens)
+#     tokens = tokens[:first] + tokens[last+1:]
+#     first, last = find_pair(tokens)
 
-regex = '|(s*)df'
+regex = '|(s*){3}df?'
 regex = '(' + regex + ')'
 tokens = Parser(regex)
 res = tree_builder(tokens)
