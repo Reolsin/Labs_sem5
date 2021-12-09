@@ -128,5 +128,5 @@ def splt(string: str, s: str):
 
 
 groups = []
-generate_groups(groups, '(asd)(asdas)')
+generate_groups(groups, '(asd(asdas(dasd)))(asdas)')
 print(groups)
