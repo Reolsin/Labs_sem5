@@ -1,28 +1,14 @@
-class Tree:
-
-    def __init__(self, value, kids: list):
-        self.value = value
-        self.kids = kids
-
-    def add_kid(self, kid):
-        self.kids.append(kid)
-
-    def add_kids(self, kids: list):
-        for kid in kids:
-            self.add_kid(kid)
-
-    def __str__(self):
-        return self.token.__str__() + ': ' + '(' + ','.join([kid.__str__() for kid in self.kids]) + ')'
-
+from Treebuild import *
 
 
 class myre_compile(object):
 
-    def __init__(self, regex):
-        pass
+    def __init__(self, regex, ABC):
+        self.tree, _ = tree_builder(Parser(regex))
+        self.DFA = min_DFA2(DFA_builder(NFA_builder(self.tree), ABC), ABC)
 
     def restore(self):
-        pass
+        return regex
 
     def inversion(self):
         pass
@@ -31,102 +17,44 @@ class myre_compile(object):
         pass
 
 
-
 class myre_findall(object):
 
     def __init__(self, regex: str, string: str):
+        self.tree = tree_builder(Parser(regex))
 
-        tokens = list(regex)
+    def group_index(self, i: int == -1):
+        return self.groups[i][1].__str__()
 
-        self.groups = []
-        if brackets_is_correct(regex):
-            generate_groups(self.groups, regex)
-        pass
-
-    def group(self, i):
-        pass
+    def group_name(self, name: str):
+        return [j.__str__() for j in [i for i in self.groups if self.groups[i][0] == name]]
 
     def __str__(self):
         pass
 
 
-
 class myre(object):
 
     def compile(regex):
-        
         return myre_compile(regex)
 
     def findall(regex, string):
-
         return myre_findall(regex, string)
 
 
+regex = 'as{2}da?a|ds*'
+regex = '(' + regex + ')'
+tokens = Parser(regex)
+tree = tree_builder(tokens)
 
-def find_bracket_group(regex, start, end):
-    n = start
-    count = 0
-    for i in range(start + 1, end):
-        if regex[i] == '(':
-            if start == n:
-                start = i
-            count+=1
-        if regex[i] == ')' and start != n:
-            count-=1
-            if count == 0:
-                end = i
-                return start, end
-    
-    return start, end
+print('Tree:', tree)
 
-def generate_groups(groups: list, regex: str):
-    start, end = -1, len(regex)
-    t = 0
+ABC = 'asd'
 
-    while end != t:
-        groups.append(regex[start + 1:end])
-        t = end
-        start, end = find_bracket_group(regex, start, end)
-        if t == end:
-            start, end, t = end, len(regex), len(regex)
-            start, end = find_bracket_group(regex, start, end)
+NFA = NFA_builder(tree)
+print(NFA)
 
-def brackets_is_correct(regex):
-    count = 0
-    for i in regex:
-        if i == '(':
-            count+=1
-        elif i == ')':
-            count-=1
-        if count < 0:
-            return False
-    if count == 0:
-        return True
-    else:
-        return False
+DFA = DFA_builder(NFA, ABC)
+print(DFA)
 
-
-def splt(string: str, s: str):
-    res = []
-    start = 0
-    count = 0
-
-    for i in range(len(string)):
-        if string[i] == '(':
-            count+=1
-        elif string[i] == ')':
-            count-=1
-        if count == 0:
-            if string[i] == s:
-                end = i
-                res.append(string[start:end])
-                start = i + 1
-    end = len(string)
-    res.append(string[start:end])           
-    
-    return res
-
-
-groups = []
-generate_groups(groups, '(asd(asdas(dasd)))(asdas)')
-print(groups)
+minDFA = min_DFA2(DFA, ABC)
+print(minDFA)

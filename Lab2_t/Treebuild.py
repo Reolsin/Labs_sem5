@@ -16,10 +16,10 @@ class Token:
         self.value = value
 
     def __eq__(self, __o: object) -> bool:
-        return self.type == 'token' and self.value == __o
+        return self.is_token() and self.value == __o
 
     def __ne__(self, __o: object) -> bool:
-        return self.type != 'token' or self.value != __o
+        return not self.__eq__(__o)
 
     def is_literal(self):
         return self.type == 'literal'
@@ -31,30 +31,24 @@ class Token:
         return self.value
 
 
-class State:
-
-    def __init__(self, name, relations: dict):
-        self.name = name
-        self.relations = relations
-
 name = 0
 def get_name():
     global name
-    tmp = name
     name += 1
-    return tmp
+    return name
 
 class Automat:
 
     def __str__(self):
         return '\n'.join([str(self.start)] + ['{}: {}'.format(k, self.states[k]) for k in self.states] + [str(self.end)])
 
+
 class NFA_Automat(Automat):
 
-    def __init__(self, start: int, relation: dict, end: int):
-        self.states = {start: relation}
-        self.start = start
-        self.end = end
+    def __init__(self, token):
+        self.end = get_name()
+        self.start = get_name()
+        self.states = {self.start: {token: [self.end]}}
 
     def conc(self, other):
         self.states.update(other.states)
@@ -88,13 +82,18 @@ class NFA_Automat(Automat):
         return self
 
     def possible(self):
-        self.states[self.start][''].append(self.end)
+        if '' in self.states[self.start]:
+            self.states[self.start][''].append(self.end)
+        else:
+            self.states[self.start][''] = [self.end]
         return self
 
     def copy(self):
         new_states = {s: get_name() for s in self.states}
         new_states[self.end] = get_name()
-        au_copy = NFA_Automat(new_states[self.start], {}, new_states[self.end])
+        au_copy = NFA_Automat('')
+        au_copy.start = new_states[self.start]
+        au_copy.end = new_states[self.end]
         au_copy.states = {new_states[s1]:{a:[new_states[s2] for s2 in self.states[s1][a]] for a in self.states[s1]} for s1 in self.states}
         return au_copy
         
@@ -108,11 +107,10 @@ class DFA_Automat(Automat):
 
 
 symbols = set(['*', '|', '{', '}', '%', '(', ')', '?', '<', '>'])
-ABC = 'asd'
 
-def Parser(regex):
-    tokens = []
-    i = 0
+
+def Parser(regex: str):
+    tokens, i = [], 0
 
     while i < len(regex):
         if regex[i] not in symbols:
@@ -133,12 +131,28 @@ def Parser(regex):
                 i = j
             else:
                 pass
-        elif regex[i] == '(' or regex[i] == ')' or regex[i] == '*' or regex[i] == '|' or regex[i] == '?':
+        elif regex[i] == '(':
+            tokens.append(Token('token', regex[i]))
+            gname = None
+            if i+1 < len(regex):
+                if regex[i+1] == '<':
+                    j = i+2
+                    while j < len(regex)  and regex[j] != '>':
+                        if not (regex[j].isalpha() or regex[j].isdigit() or regex[j] == '_'):
+                            pass
+                        j += 1
+                    if j != len(regex):
+                        gname = regex[i+2:j]
+                    else:
+                        pass
+            else:
+                pass
+            tokens.append(Token('group_name', gname))
+        elif regex[i] == '*' or regex[i] == '|' or regex[i] == '?' or regex[i] == ')':
             tokens.append(Token('token', regex[i]))
         else:
             pass
         i += 1
-
     return tokens
 
     
@@ -159,14 +173,15 @@ def tree_builder(tokens: list):
     first, last = find_pair(tokens)
 
     while len(tokens) > 1:
-        if type(tokens[first+1]) or tokens[first+1].is_literal():
-            groot = tokens[first+1]
+        if type(tokens[first+2]) == BinTree or tokens[first+2].is_literal():
+            groot = tokens[first+2]
             parent = None
-        else:
-            groot = BinTree(tokens[first+1], None, None)
+        elif last > first + 2:
+            groot = BinTree(tokens[first+2], None, None)
             parent = groot
-
-        for i in range(first + 2, last):
+        else:
+            pass
+        for i in range(first + 3, last):
             if type(tokens[i]) == BinTree or tokens[i].is_literal():
                 if parent:
                     if parent.right:
@@ -186,23 +201,24 @@ def tree_builder(tokens: list):
                 if parent:
                     if parent.right:
                         parent.right = BinTree(tokens[i], parent.right, None)
+                    else:
+                        pass
                 else:
                     groot = BinTree(tokens[i], groot, None)
 
         tokens = tokens[:first] + [groot] + tokens[last+1:]
         first, last = find_pair(tokens)
+        if first == -1 ^ last == -1:
+            pass
 
     return tokens[0]
 
 
-def leaf_automat(token) -> NFA_Automat:
-    end = get_name()
-    return NFA_Automat(get_name(), {token : [end]}, end)
-
-
 def NFA_builder(node) -> NFA_Automat:
     if type(node) == Token:
-        return leaf_automat(node.value)
+        return NFA_Automat(node.value)
+    elif node == None:
+        return NFA_Automat('')
     else:
         first = NFA_builder(node.left)
         if node.value == '.':
@@ -228,7 +244,7 @@ def epsilon(nfa: NFA_Automat, state) -> frozenset:
     return frozenset(res)
 
 
-def DFA_builder(nfa: NFA_Automat) -> DFA_Automat:
+def DFA_builder(nfa: NFA_Automat, ABC: str) -> DFA_Automat:
     start_state = epsilon(nfa, nfa.start)
     gen_states = [start_state]
     dfa_states = {start_state: {}}
@@ -257,53 +273,98 @@ def DFA_builder(nfa: NFA_Automat) -> DFA_Automat:
     return DFA_Automat(new_states[gen_states[0]], set([new_states[gen_states[end_states[n]]] for n in range(len(end_states))]), states)
 
 
-def min_DFA(dfa: DFA_Automat) -> DFA_Automat:
-    groups = set([frozenset(dfa.end)])
-    identifier = {s:0 for s in dfa.states if s in dfa.end}
+# def min_DFA(dfa: DFA_Automat) -> DFA_Automat:
+#     groups, identifier = set([frozenset(dfa.end)]), {}
+#     S_F = [i for i in dfa.states if i not in dfa.end]
+#     if S_F:
+#         groups.add(frozenset(S_F))
+#     while True:
+#         for raw in enumerate(groups):
+#             identifier.update({s:raw[0] for s in raw[1]})
+#         new_groups = set()
+#         for g in groups:
+#             equivalent_pairs, solo = [], []
+#             for state1 in g:
+#                 for state2 in g:
+#                     pair = frozenset([state1, state2])
+#                     for a in ABC:
+#                         if identifier.get(dfa.states[state1].get(a)) != identifier.get(dfa.states[state2].get(a)):
+#                             pair = None
+#                             break
+#                     if pair and state1 != state2 and pair not in equivalent_pairs:
+#                         equivalent_pairs.append(pair)
+#                     elif pair and pair not in solo:
+#                         solo.append(pair)
+                        
+#             used_states = set()
+#             while len(equivalent_pairs) > 0:
+#                 pair1 = equivalent_pairs.pop()
+#                 tmp = set(pair1)
+#                 j = 0
+#                 while j < len(equivalent_pairs):
+#                     if pair1&equivalent_pairs[j]:
+#                         tmp.update(equivalent_pairs.pop(j))
+#                     else:
+#                         j += 1
+#                 used_states.update(tmp)
+#                 new_groups.add(frozenset(tmp))
+#             new_groups.update([s for s in solo if not s&used_states])
+
+#         if groups == new_groups:
+#             break
+#         groups = new_groups
+
+
+#     groups = {s: {} for s in groups}
+#     for gr in groups:
+#         for a in ABC:
+#             s1 = next(iter(gr))
+#             if dfa.states[s1].get(a):
+#                 groups[gr][a] = [gr2 for gr2 in groups if dfa.states[s1].get(a) in gr2].pop()
+        
+#     end = set([i for i in groups if i&dfa.end])
+#     start = [i for i in groups if dfa.start in i].pop()
+#     new_states = {s: get_name() for s in groups}
+#     states = {new_states[s]:{a:new_states[groups[s][a]] for a in groups[s]} for s in groups}
+
+#     return DFA_Automat(new_states[start], set([new_states[s] for s in end]), states)
+
+
+
+def check_equivalance(state1: int, state2: int, dfa: DFA_Automat, group_map: dict, ABC):
+
+    for a in ABC:
+        if group_map.get(dfa.states[state1].get(a)) != group_map.get(dfa.states[state2].get(a)):
+            return False
+    return True
+
+
+def min_DFA2(dfa: DFA_Automat, ABC) -> DFA_Automat:
+    groups, group_map = set([frozenset(dfa.end)]), dict()
     S_F = [i for i in dfa.states if i not in dfa.end]
     if S_F:
         groups.add(frozenset(S_F))
-        identifier.update({s:1 for s in dfa.states if s not in dfa.end})
     new_groups = set()
-    while True:
-        for g in groups:
-            equivalent_pairs = []
-            solo = []
-            for state1 in g:
-                for state2 in g:
-                    pair = frozenset([state1, state2])
-                    for a in ABC:
-                        if identifier.get(dfa.states[state1].get(a)) != identifier.get(dfa.states[state2].get(a)):
-                            pair = None
-                            break
-                    if pair and pair not in equivalent_pairs:
-                        if state1 != state2:
-                            equivalent_pairs.append(pair)
-                        else:
-                            solo.append(pair)
-            i, j = 0, 0
-            while i < len(equivalent_pairs):
-                pair1 = equivalent_pairs.pop(i)
-                tmp = set(pair1)
-                while j < len(equivalent_pairs):
-                    if pair1&equivalent_pairs[j]:
-                        tmp.update(equivalent_pairs.pop(j))
-                    else:
-                        j += 1
-                new_groups.add(frozenset(tmp))
-            tmp = set()
-            [tmp.update(g) for g in new_groups]
-            new_groups.update([s for s in solo if not s&tmp])
-                
-        if groups == new_groups:
-            break
-        groups = new_groups
+    while groups != new_groups:
         for raw in enumerate(groups):
-            identifier.update({s:raw[0] for s in raw[1]})
+            group_map.update({s:raw[0] for s in raw[1]})
+        if len(new_groups):
+            groups = new_groups
+        new_groups = set()
+        for g in groups:
+            used_states = set()
+            for state1 in g:
+                if state1 not in used_states:
+                    eq_states = set([state1])
+                    used_states.add(state1)
+                    for state2 in g - used_states:
+                        if check_equivalance(state1, state2, dfa, group_map, ABC):
+                            eq_states.add(state2)
+                            used_states.add(state2)
+                new_groups.add(frozenset(eq_states))
 
     groups = {s: {} for s in groups}
     for gr in groups:
-        groups[gr] = {}
         for a in ABC:
             s1 = next(iter(gr))
             if dfa.states[s1].get(a):
@@ -315,21 +376,4 @@ def min_DFA(dfa: DFA_Automat) -> DFA_Automat:
     states = {new_states[s]:{a:new_states[groups[s][a]] for a in groups[s]} for s in groups}
 
     return DFA_Automat(new_states[start], set([new_states[s] for s in end]), states)
-                    
 
-
-regex = 'a|ds*'
-regex = '(' + regex + ')'
-tokens = Parser(regex)
-tree = tree_builder(tokens)
-
-print('Tree:', tree)
-
-NFA = NFA_builder(tree)
-print(NFA)
-
-DFA = DFA_builder(NFA)
-print(DFA)
-
-minDFA = min_DFA(DFA)
-print(minDFA)
