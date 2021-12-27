@@ -158,7 +158,7 @@ def Parser(regex: str):
                         pass
             else:
                 pass
-            tokens.append(Token('group_name', {ng: gname}))
+            tokens.append(Token('group_name', [ng, gname]))
             ng += 1
         elif regex[i] == '*' or regex[i] == '|' or regex[i] == '?' or regex[i] == ')':
             tokens.append(Token('token', regex[i]))
@@ -447,6 +447,82 @@ def Tree_passage(node: BinTree, string: str, i: int) -> set:
     return next_pos
 
 
+class gr_struct:
+
+    def __init__(self, start: int, gruop_number: int, next: list=[]):
+        self.start = start
+        self.gnum = gruop_number
+        self.next = next
+
+
+class gr_generator:
+
+    def __init__(self, string, tree):
+        self.string = string
+        self.tree = tree
+        self.cur = tree
+
+    def default_passage(self, i: int) -> set:
+        next_pos = set()
+            
+        if self.cur == None:
+            if len(self.string) == i:
+                next_pos.add(i)
+
+        elif type(self.cur) == Token:
+            if i < len(self.string) and self.string[i] == self.cur.value:
+                next_pos.add(i+1)
+
+        else:
+            cur = self.cur
+            self.cur = cur.left
+            tmp = self.passage(i)
+            if cur.value == '.':
+                self.cur = cur.right
+                for pos in tmp:
+                    next_pos.update(self.passage(pos))
+
+            elif cur.value == '|':
+                next_pos.update(tmp)
+                self.cur = cur.right
+                next_pos.update(self.passage(i))
+
+            elif cur.value == '*':
+                s = tmp
+                while len(s) != 0:
+                    next_pos.update(s)
+                    tmp = s
+                    s = set()
+                    [s.update(self.passage(pos)) for pos in tmp]
+                next_pos.add(i)
+
+            elif cur.value == '?':
+                next_pos.update(tmp)
+                next_pos.add(i)
+
+            elif type(self.cur.value.value) == int:
+                s = tmp
+                j = 1
+                while len(s) != 0 and j != cur.value.value:
+                    tmp = s
+                    s = set()
+                    [s.update(self.passage(pos)) for pos in tmp]
+                    j += 1
+                next_pos.update(s)
+            elif cur.value.is_group():
+                next_pos.update(tmp)
+            self.cur = cur
+
+        return next_pos
+
+    
+    def group_passage(self, i):
+        cur = self.cur
+        if cur.value.is_group():
+
+            pass
+
+
 def inversion(dfa: DFA_Automat, ABC) -> DFA_Automat:
     new_names = {s : get_name() for s in dfa.states}
     start_state = get_name()
@@ -525,7 +601,6 @@ def gen_regex(dfa: DFA_Automat, state) -> str:
     return regex
 
 
-
 def restore(dfa: DFA_Automat) -> str:
     dfa = dfa.copy()
     print(dfa)
@@ -568,7 +643,7 @@ def restore(dfa: DFA_Automat) -> str:
 'aa|ds*|sa?'
 'ds*sss(s|sa?)sd'
 'ds*|da|db|ccb*dd|ccd'
-regex = 'ds*|da|db|ccb*dd|ccd'
+regex = 'd(s*)sss'
 regex = '(' + regex + ')'
 tokens = Parser(regex)
 tree = tree_builder(tokens)
@@ -583,6 +658,15 @@ print(DFA)
 min = min_DFA2(DFA, ABC)
 print(min)
 print('----------------------------------------------------------------------------')
+s = 'dssss'
+print(Tree_passage(tree, s, 0))
+print(Tree_passage(tree, s, 0))
+print('----------------------------------------------------------------------------')
 print(addition(min, ABC))
 print(inversion(min, ABC))
 print(restore(min))
+print('----------------------------------------------------------------------------')
+gr = gr_generator(s, tree)
+print(gr.passage(0))
+print(gr.sgroups)
+print(gr.egroups)
