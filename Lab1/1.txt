@@ -1,9 +1,0 @@
-irc://serv123:123123/login123?pass123irc://serv123:123123/login123?pass123123
-irc://serv123:123/login123?pass123sssssssssssssssssssssssssssssssssssssssssssssssssss
-irc://serv12:123/login123?pass123
-irc://serv12:65536/login123?pass123
-irc://serv12::65535/login123?pass123
-irc:///serv12::65535/login123?pass123
-irc://serv2:123/login123?pass123
-irc://serv2:123/login234?pass123
-irc://serv2
