@@ -1,4 +1,4 @@
-from Utils import *
+from TreenParser import *
 
 
 name = 0
@@ -76,10 +76,18 @@ class DFA_Automat(Automat):
         self.end = end
         self.states = states
 
-    def copy(self):
-        new_states = {s: get_name() for s in self.states}
-        states = {new_states[s1]:{a:new_states[self.states[s1][a]] for a in self.states[s1]} for s1 in self.states}
-        return DFA_Automat(new_states[self.start], {new_states[s] for s in self.end}, states)
+    def copy(self, new_names=True):
+        if new_names:
+            new_states = {s: get_name() for s in self.states}
+            states = {new_states[s1]:{a:new_states[self.states[s1][a]] for a in self.states[s1]} for s1 in self.states}
+            start_state = new_states[self.start]
+            end_states = {new_states[s] for s in self.end}
+        else:
+            states = {s1:{a:self.states[s1][a] for a in self.states[s1]} for s1 in self.states}
+            start_state = self.start
+            end_states = {s for s in self.end}
+
+        return DFA_Automat(start_state, end_states, states)
 
 
 def NFA_builder(node) -> NFA_Automat:
@@ -104,13 +112,28 @@ def NFA_builder(node) -> NFA_Automat:
         return first
 
 
+# def epsilon(nfa: NFA_Automat, state) -> frozenset:
+#     res = set([state])
+#     if nfa.states.get(state) and nfa.states[state].get(''):
+#         for s in nfa.states[state]['']:
+#             res.update(epsilon(nfa, s))
+#     return frozenset(res)
+
+
 def epsilon(nfa: NFA_Automat, state) -> frozenset:
     res = set([state])
-    if nfa.states.get(state) and nfa.states[state].get(''):
-        for s in nfa.states[state]['']:
-            res.update(epsilon(nfa, s))
-    return frozenset(res)
+    next_states = set([state])
+    prev_len = 0
 
+    while len(res) != prev_len:
+        prev_len = len(res)
+        tmp = next_states
+        next_states = set()
+        [next_states.update(nfa.states[s].get('')) for s in tmp if s != nfa.end and nfa.states[s].get('')]
+        res.update(next_states)
+
+    res.discard(None)
+    return frozenset(res)
 
 def DFA_builder(nfa: NFA_Automat, ABC: str) -> DFA_Automat:
     start_state = epsilon(nfa, nfa.start)
