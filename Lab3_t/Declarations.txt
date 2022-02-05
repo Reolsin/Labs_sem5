@@ -1,0 +1,72 @@
+decl -> 2ldecl
+      | 2adecl
+      | 1ldecl
+      | 1adecl
+      | lvdecl
+      | avdecl
+
+cdecl -> cldecl
+       | cadecl
+
+fdecl 
+
+----------------------------------
+
+cldecl -> CLVAR ID EQ lexpr
+        | CLVAR ID EQ ID
+
+cadecl -> CAVAR ID EQ aexpr
+        | CLVAR ID EQ ID
+
+----------------------------------
+
+lvdecl -> LVAR ID
+        | LVAR ID EQ lexpr
+        | LVAR ID EQ ID
+
+avdecl -> AVAR ID
+        | AVAR ID EQ aexpr
+        | AVAR ID EQ ID
+
+----------------------------------
+
+1ldecl -> L1ARR ID
+        | L1ARR ID EQ SOPEN lvals SCLOSE
+
+lvals -> expr COMA lvals
+       | expr
+       |
+
+1adecl -> A1ARR ID
+        | L1ARR ID EQ SOPEN avals SCLOSE
+
+avals -> expr COMA avals
+       | expr
+       |
+
+2ldecl -> L2ARR ID
+        | L2ARR ID EQ SOPEN larrs SCLOSE
+
+larrs -> lvals COMD larrs
+       | lvals
+       | 
+
+2adecl -> A2ARR ID
+        | A2ARR ID EQ SOPEN aarrs SCLOSE
+
+aarrs -> avals COMD aarrs
+       | avals
+       | 
+
+----------------------------------
+
+fdecl -> fovars FUNCTION ID fivars group
+
+fovars -> SOPEN fvars SCLOSE
+        | ID EQ expr
+
+fivars -> OPEN fvars CLOSE
+
+fvars -> 
+       | ID EQ expr COMA fvars
+       | ID EQ expr

@@ -136,7 +136,7 @@ class regex:
 '((a|bd*c)*bd*|a*)*'
 '((a)*)*'
 '(a|bd*c)*bd*|(a|bd*c)*'
-regx = '(ab)*'
+regx = 'ds*'
 regx = '(' + regx + ')'
 tokens, ABC = Parser(regx)
 tree = tree_builder(tokens)

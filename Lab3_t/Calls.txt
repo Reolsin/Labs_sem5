@@ -1,0 +1,12 @@
+fcall -> SOPEN vars SCLOSE EQ ID OPEN pars CLOSE
+
+vars -> ID COMA vars
+      | COMA vars
+      | ID
+
+pars -> expr COMA vars
+      | COMA vars
+      | expr
+
+
+mcall -> ID OPEN expr CLOSE
