@@ -62,13 +62,7 @@ t_NOT = r'NOT'
 t_OR = r'OR'
 t_GTLT = r'GT|LT'
 
-maxidlen = 0
-def t_ID(t):
-    r'\b[a-z_]\w*'
-    global maxidlen
-    if len(t.value) > maxidlen:
-        maxidlen = len(t.value)
-    return t
+t_ID = r'\b[a-z_]\w*'
 
 t_ignore = ' \t\r\f'
 
@@ -92,17 +86,25 @@ CUINT c1 = 123
 a4 = 0 FUNCTION test () {}
 [a4 = 0, a5 = 123,] FUNCTION test (a2 = 5, a3 = 123,) {
 
-    es = 1203
+    es = ( NOT (1203 GT 431)) OR NOT (1203 LT 431)
     EXTEND1 a9 5
+    {
+        es = ( NOT (1203 GT 431)) OR NOT (1203 LT 431)
+    }
     EXTEND2 a9 5 34
 
 }
-[a4 = 0, a5 = 123] FUNCTION test2 (a2 = 5, a3 = 123) {}
+[a4 = 0, a5 = 123] FUNCTION test212312 (a2 = 5, a3 = 123) {}
 
 [,] = test (,)
 
-123
-TRUE
+{
+    123
+    TRUE
+    {
+        asd
+    }
+}
 
 WHILE a3 DO {
     a3 = FALSE
@@ -126,7 +128,6 @@ IF a3 {
 (123 GT 125) OR TRUE
 NOT (123 GT 125) OR FALSE
 '''
-
 
 
 print(text)
