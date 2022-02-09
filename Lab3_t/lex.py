@@ -76,7 +76,7 @@ def t_error(t):
 
 lexer = lex.lex(reflags=re.UNICODE | re.VERBOSE)
 
-text = '''
+'''
 UINT a1 = 1238888 #asdadasdasd
 UINT a2
 CBOOLEAN a3 = TRUE
@@ -128,7 +128,10 @@ IF a3 {
 (123 GT 125) OR TRUE
 NOT (123 GT 125) OR FALSE
 '''
-
+text = '''UINT a3 = 123
+BOOLEAN a3 = TRUE
+CBOOLEAN a3 = TRUE
+CBOOLEAN a3 = FALSE'''
 
 print(text)
 
