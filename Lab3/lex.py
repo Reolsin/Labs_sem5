@@ -79,8 +79,39 @@ def t_error(t):
 
 lexer = lex.lex(reflags=re.UNICODE | re.VERBOSE)
 
+#declarations
+'''
+UINT a3 = 5
+PRINT a3
+UINT a3
+PRINT a3
+CUINT a3 = 5
+PRINT a3
+1DARRAYOFUINT a3 = [1, 2, 3]
+PRINT a3
+2DARRAYOFUINT a3 = [1, 2, 3; ; 3, 2, 1]
+PRINT a3
+BOOLEAN a3 = FALSE
+PRINT a3
+BOOLEAN a3
+PRINT a3
+CBOOLEAN a3 = FALSE
+PRINT a3
+1DARRAYOFBOOL a3 = [TRUE, FALSE]
+PRINT a3
+2DARRAYOFBOOL a3 = [TRUE, FALSE; ; ;TRUE, FALSE]
+PRINT a3'''
 
-text = '''
+'''
+CUINT a3 = 5
+1DARRAYOFUINT a3 = [a3, a3, a3]
+PRINT a3
+
+result =  FUNCTION fib ()
+'''
+
+#factorial
+'''
 UINT a
 res = 0 FUNCTION sum(first = 0, second = 0) {
     WHILE second GT 0 DO {
@@ -90,10 +121,10 @@ res = 0 FUNCTION sum(first = 0, second = 0) {
     res = first
 }
 
-res = 0 FUNCTION mul(first = 0, second = 0) {
-    WHILE second GT 0 DO {
-        DEC second
-        [res] = sum(res, first)
+res = 0 FUNCTION mul(f = 0, s = 0) {
+    INC s
+    WHILE (DEC s) GT 0 DO {
+        [res] = sum(res, f)
     }
 }
 
@@ -107,25 +138,59 @@ res = 0 FUNCTION factorial(int = 1) {
     }
 }
 
+res = 1 FUNCTION while_factorial(int = 1) {
+    UINT i = 1
+    WHILE i LT int DO {
+        INC i
+        [res] = mul(res, i)
+    }
+}
+
 [a] = sum(5, 5)
 PRINT a
 [a] = mul(5, 5)
 PRINT a
-[a] = factorial(5)
+[a] = factorial(3)
+PRINT a
+[a] = while_factorial(4)
 PRINT a
 '''
 
-# def factorial(c):
-#     a = 1
-#     while a < c:
-#         a = a * (a+1)
+text = '''
+UINT a
+UINT c = 123
 
-# def fib(c:int):
-#     a = 0
-#     b = 1
-#     print(b)
-#     while b < c:
-#         t = b
-#         b = a + b
-#         a = t
-#         print(b)
+f = 0 FUNCTION b(one = 0, two = 4){
+    UINT a
+    UINT c = 123
+    UINT d = TRUE
+    PRINT d
+}
+
+[a] = b(,)
+'''
+
+#fibonachi
+'''
+res = 0 FUNCTION sum(first = 0, second = 0) {
+    WHILE second GT 0 DO {
+        INC first
+        DEC second}
+    res = first
+}
+res = 0 FUNCTION fib(int = 1) {
+    UINT b = 1
+    UINT t
+    WHILE b LT int DO {
+        PRINT b
+        t = b
+        [b] = sum(res,b)
+        res = t
+        }
+    }
+
+UINT a
+[a] = fib(9)
+
+'''
+

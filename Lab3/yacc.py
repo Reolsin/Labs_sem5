@@ -1,194 +1,175 @@
-from telnetlib import TM
 from lex import tokens, text
 import ply.yacc as yacc
 
+maxint = 4096
+
 class Tmp:
 
-    def __init__(self, type, data):
+    def __init__(self, type: type, data):
         self.type = type
         self.data = data
 
 class Var:
 
-    def __init__(self, id, type: type, const: bool, n: int, data) -> None:
+    def __init__(self, id: str, type: type, const: bool, n: int, expr, data = None) -> None:
         self.id = id
         self.type = type
         self.const = const
         self.dimensions = n
+        self.expr = expr
         self.data = data
 
-    def is_array(self):
-        if self.type.dimensions > 0:
-            return True
-        else: raise Exception('Array expected, but found different type.')
+    def run_var_init(self, program, function):
+        if self.expr:
+            if self.dimensions == 2:
+                self.data = [[get_expr(expr, self.type, program, function).data for expr in arr] for arr in self.expr]
 
-    def _dimensions(self):
-        return self.dimensions
-
-    def check_dimensions(self, n):
-        if self.dimensions == n:
-            return True
-        else: raise Exception('Expected {} index, but {} were given.'.format(self.dimensions, n))
-
-    def _const(self):
-        if self.const: raise Exception('Const value cant be changed.')
-        else: return False
+            elif self.dimensions == 1:
+                self.data = [get_expr(expr, self.type, program, function).data for expr in self.expr]
+            else:
+                self.data = get_expr(self.expr, self.type, program, function).data
 
     def check_type(self, type):
         if self.type == type:
             return True
-        else: raise Exception('Incorrect type.')
+        else:
+            raise Exception('Bad type.')
 
-    def init(self, program, function):
-        if self.data:
-            if self.dimensions == 1:
-                data = []
-                for expr in self.data:
-                    tmp = expr.Solve(program, function)
-                    self.check_type(tmp.type)
-                    data.append(tmp.data)
-                self.data = data
-            elif self.dimensions == 2:
-                data = []
-                for array in self.data:
-                    arrtmp = []
-                    for expr in array:
-                        tmp = expr.Solve(program, function)
-                        self.check_type(tmp.type)
-                        arrtmp.append(tmp.data)
-                    data.append(arrtmp)
-                self.data = data
-            else:
-                if isinstance(self.data, Expression): tmp = self.data.Solve(program, function)
-                else: tmp = get_rvar(self.data, program, function)
-                self.check_type(tmp.type)
-                self.data = tmp.data
+    def check_dimensions(self, n):
+        if self.dimensions == n:
+            return True
+        else:
+            raise Exception('Bad type.')
 
-    def __repr__(self) -> str:
-        return 'Var      | ID: {} | Type: {} | Data: {}\t'.format(self.id + ' '*(10-len(self.id)), str(self.type) + ' '*(13-len(str(self.type))), self.data)
+    def _const(self):
+        if self.const:
+            raise Exception('Try to change const.')
+        else:
+            return False
+
+    def copy(self):
+        return Var(self.id, self.type, self.const, self.dimensions, self.expr, self.data)
+
+    def __str__(self):
+        return 'var inst, id: {}, type: {}'.format(self.id, self.type)
+
+    def __repr__(self):
+        return 'Var | ID: {} | Data: {}\t'.format(self.id, str(self.type), self.data)
+
 
 class Function:
     
-    def __init__(self, id, default_pars, group, default_vars, vars = dict()) -> None:
+    def __init__(self, id, default_pars, script, default_vars) -> None:
         self.id = id
-        self.vars = vars
-        self.default_pars = default_pars
-        self.default_vars = default_vars
-        self.script = group
+        self.vars = dict()
+        self.def_pars = default_pars
+        self.def_vars = default_vars
+        self.script = script
+        self.cur_inst = [0, 'declarating function ' + self.id]
 
-    def check_input(self, pars, program, function):
-        if len(pars) == len(self.default_pars):
-            for i, par in enumerate(pars):
-                if par: self.vars[self.default_pars[i]].check_type(par._type(program, function))
-        else:
-            raise Exception('Incorrect function call, got {} args, but {} expected.'.format(len(pars), len(self.default_pars)))
+    def run_func_init(self, program):
+        for par, expr in self.def_pars:
+            tmp = expr.Solve(program, None)
+            self.vars[par] = Var(par, tmp.type, False, 0, None, tmp.data)
+        self.def_pars = [i[0] for i in self.def_pars]
 
-    def check_out(self, idents, program, function):
-        if len(idents) == len(self.default_vars):
-            for i, ident in enumerate(idents):
-                if ident:
-                    if type(ident) == Brackets:
-                        t = ident._type(program, function)
-                    else:
-                        t = get_lvar(ident, program, function).type
-                    self.vars[self.default_pars[i]].check_type(t)
-        else:
-            raise Exception('Incorrect function call, got {} args, but {} expected.'.format(len(idents), len(self.default_vars)))
+        for var, expr in self.def_vars:
+            tmp = expr.Solve(program, None)
+            self.vars[var] = Var(var, tmp.type, False, 0, None, tmp.data)
+        self.def_vars = [i[0] for i in self.def_vars]
 
-    def init(self, program):
-        for par in self.default_pars:
-            tmp = par[1].Solve(program, None)
-            self.vars[par[0]] = Var(par[0], tmp.type, False, 0, tmp.data)
-        self.default_pars = [i[0] for i in self.default_pars]
-        for var in self.default_vars:
-            tmp = var[1].Solve(program, None)
-            self.vars[var[0]] = Var(var[0], tmp.type, False, 0, tmp.data)
-        self.default_vars = [i[0] for i in self.default_vars]
+    def check_call(self, pars, vars, program, function):
+        self.cur_inst = [0, 'calling function ' + self.id]
+        if len(self.def_pars) != len(pars):
+            program.set_exception('Expected {} args, but {} stated'.format(len(self.def_pars), len(pars)))
+            raise Exception('Expected {} args, but {} stated'.format(len(self.def_pars), len(pars)))
+        if len(self.def_vars) != len(vars):
+            program.set_exception('Expected {} args, but {} stated'.format(len(self.def_pars), len(pars)))
+            raise Exception('Expected {} outputs, but {} stated'.format(len(self.def_vars), len(vars)))
+        for i, ident in enumerate(vars):
+            if ident:
+                if type(ident) == Brackets:
+                    self.vars[self.def_vars[i]].check_type(ident._type(program, function))
+                else: 
+                    self.vars[self.def_vars[i]].check_type(get_var(ident, program, function).type)
+        for i, expr in enumerate(pars):
+            if expr:
+                self.vars[self.def_pars[i]].check_type(expr._type(program, function))
 
-    def copy(self):
-        return Function(None, self.default_pars, self.script, self.default_vars, {k:Var(self.vars[k].id, self.vars[k].type, self.vars[k].const, self.vars[k].dimensions, self.vars[k].data) for k in self.vars})
+    def duplicate(self):
+        tmp = Function(self.id, [i for i in self.def_pars], self.script, [i for i in self.def_vars])
+        tmp.vars = {ident:self.vars[ident].copy() for ident in self.vars}
+        return tmp
 
     def run(self, args, program):
         for i in range(len(args)):
             if args[i]:
-                self.vars[self.default_pars[i]].data = args[i]
-        for line in self.script:
-            line.interpretate(program, self)
+                self.vars[self.def_pars[i]].data = args[i]
+        for i in range(len(self.script)):
+            self.cur_inst = [i+1, self.script[i]]
+            self.script[i].interpretate(program, self)
 
-        return [self.vars[ident].data for ident in self.default_vars]
+        return [self.vars[ident].data for ident in self.def_vars]
 
-    def __repr__(self) -> str:
-        out = 'Function | ID: '
-        out += self.id + ' '*(10-len(self.id))
-        out += ' | Parameters: '
-        if self.default_pars:
-            out += str(self.default_pars)
-        else:
-            out += 'None'
-        out += ' | Return vars: '
-        if self.default_vars:
-            out += str(self.default_vars)
-        else:
-            out += 'None'
-        out += '\n{\n\t'
-        if self.script:
-            out += '\n'.join([str(i) for i in self.script]).replace('\n', '\n\t')
-        out += '\n}'
-        return out
+    def __str__(self):
+        return 'function {}, in inst #{}, in {}'.format(self.id, self.cur_inst[0], self.cur_inst[1])
 
-def get_rvar(ident, program, function) -> Var:
+
+def get_var(ident, program, function) -> Var:
     if function:
         var = function.vars.get(ident)
         if not var:
-            var = program.check_var_decl(ident)
+            var = program.vars.get(ident)
     else:
-        var = program.check_var_decl(ident)
+        var = program.vars.get(ident)
+    if not var:
+        program.set_exception('Variable not declarated')
+        raise Exception('Variable not declarated')
+    return var
+
+def get_decvar(ident, program, function) -> Var:
+    if function:
+        var = function.vars.get(ident)
+        if not var:
+            var = program.vars.get(ident)
+    else:
+        var = program.vars.get(ident)
+    if not var:
+        program.set_exception('Variable not declarated')
+        raise Exception('Variable not declarated.')
     if var.data == None:
+        program.set_exception('Variable has no data.')
         raise Exception('Variable has no data.')
     return var
 
-def get_lvar(ident, program, function) -> Var:
-    if function:
-        var = function.vars.get(ident)
-        if not var:
-            var = program.check_var_decl(ident)
-    else:
-        var = program.check_var_decl(ident)
-    return var
-
-def get_aexpr(expr, program, function) -> Tmp:
+def get_expr(expr, type, program, function) -> Tmp:
     tmp = expr.Solve(program, function)
-    if tmp.type != int: raise Exception('Incorrect type.') 
-    return tmp
-
-def get_lexpr(expr, program, function) -> Tmp:
-    tmp = expr.Solve(program, function)
-    if tmp.type != bool: raise Exception('Incorrect type.') 
+    if tmp.type != type and type != None:
+        program.set_exception('Expected {} type, but {} got.'.format(type, tmp.type))
+        raise Exception('Expected {} type, but {} got.'.format(type, tmp.type))
     return tmp
 
 class Expression:
-
-    def __init__(self):
-        pass
+    pass
 
 class VAL(Expression):
 
     def __init__(self, type, val):
         self.type = type
-        self.val = val
+        self.ident = val
 
     def __repr__(self) -> str:
-        return str(self.val)
+        return str(self.ident)
 
     def Solve(self, program, function) -> Tmp:
         if self.type == Var:
-            return get_rvar(self.val, program, function)
+            return get_decvar(self.ident, program, function)
         else:
-            return Tmp(self.type, self.val)
+            return Tmp(self.type, self.ident)
 
     def _type(self, program, function):
         if self.type == Var:
-            return get_rvar(self.val, program, function).type
+            return get_decvar(self.ident, program, function).type
         else:
             return self.type
 
@@ -202,8 +183,8 @@ class GT(Expression):
         return '( {} > {} )'.format(self.left, self.right)
 
     def Solve(self, program, function) -> Tmp:
-        left = get_aexpr(self.left, program, function)
-        right = get_aexpr(self.right, program, function)
+        left = get_expr(self.left, int, program, function)
+        right = get_expr(self.right, int, program, function)
         return Tmp(bool, left.data > right.data)
 
     def _type(self, program=None, function=None):
@@ -219,8 +200,8 @@ class LT(Expression):
         return '( {} < {} )'.format(self.left, self.right)
     
     def Solve(self, program, function) -> Tmp:
-        left = get_aexpr(self.left, program, function)
-        right = get_aexpr(self.right, program, function)
+        left = get_expr(self.left, int, program, function)
+        right = get_expr(self.right, int, program, function)
         return Tmp(bool, left.data < right.data)
 
     def _type(self, program=None, function=None):
@@ -236,8 +217,8 @@ class OR(Expression):
         return '( {} OR {} )'.format(self.left, self.right)
 
     def Solve(self, program, function) -> Tmp:
-        left = get_lexpr(self.left, program, function)
-        right = get_lexpr(self.right, program, function)
+        left = get_expr(self.left, bool, program, function)
+        right = get_expr(self.right, bool, program, function)
         return Tmp(bool, left.data or right.data)
 
     def _type(self, program=None, function=None):
@@ -252,7 +233,7 @@ class NOT(Expression):
         return '( NOT {} )'.format(self.val)
 
     def Solve(self, program, function) -> Tmp:
-        var = get_lexpr(self.val, program, function)
+        var = get_expr(self.val, bool, program, function)
         return Tmp(bool, not var.data)
 
     def _type(self, program=None, function=None):
@@ -267,7 +248,7 @@ class INC(Expression):
         return '++{}'.format(self.expr)
 
     def Solve(self, program, function) -> Tmp:
-        var = get_aexpr(self.expr, program, function)
+        var = get_expr(self.expr, int, program, function)
         var._const()
         var.data += 1
         return Tmp(int, var.data)
@@ -284,7 +265,7 @@ class DEC(Expression):
         return '--{}'.format(self.expr)
 
     def Solve(self, program, function) -> Tmp:
-        var = get_aexpr(self.expr, program, function)
+        var = get_expr(self.expr, int, program, function)
         var._const()
         var.data -= 1
         return Tmp(int, var.data)
@@ -304,20 +285,23 @@ class Oper(Expression):
 
     def Solve(self, program, function) -> Tmp:
         if self.operator == 'PUSH':
-            return Var(None, bool, program.push(self.first))
+            type = bool
+            data = program.push(self.first)
         elif self.operator == 'GET':
-            return Var(None, int, program.get(self.first))
+            type = int
+            data = program.get(self.first)
         elif self.operator == 'MOVE':
-            return Var(None, bool, program.move(self.first))
+            type = bool
+            data = program.move(self.first)
         elif self.operator == 'SIZE':
-            var = get_rvar(self.first, program, function)
+            var = get_decvar(self.first, program, function)
+            type = int
             if self.second:
-                tmp = get_aexpr(self.second, program, function).data
-                return Tmp(int, len(var.data[tmp]))
+                tmp = get_expr(self.second, int, program, function).data
+                data = var.data[tmp]
             else:
-                return Tmp(int, len(var.data))
-        else:
-            raise Exception('')
+                data = var.data
+        return Tmp(type, data)
 
     def _type(self, program=None, function=None):
         if self.operator == 'PUSH' or self.operator == 'MOVE':
@@ -331,15 +315,15 @@ class Assign:
         self.target = a
         self.expr = b
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '{} := {}'.format(self.target, self.expr)
 
-    def execute(self, program, function: Function):
+    def run_assign(self, program, function: Function):
         tmp = self.expr.Solve(program, function)
         if type(self.target) == Brackets:
             var = self.target.Solve(program, function)
         else:
-            var = get_lvar(self.target, program, function)
+            var = get_var(self.target, program, function)
         if var.check_type(tmp.type) and not var._const():
             var.data = tmp.data
 
@@ -350,34 +334,36 @@ class EXTEND:
         self.expr1 = expr1
         self.expr2 = expr2
 
-    def __repr__(self):
-        out = self.ident + '.extend(' + str(self.expr1)
+    def run_extend(self, program, function: Function):
+        tmp1 = get_expr(self.expr1, int, program, function).data
         if self.expr2:
-            out += ', ' + str(self.expr2)
-        out += ')'
-        return out
-
-    def execute(self, program, function: Function):
-        tmp1 = get_aexpr(self.expr1, program, function).data
-        if self.expr2:
-            var = get_rvar(self.ident, program, function)
+            var = get_var(self.ident, program, function)
             var.check_dimensions(2)
-            tmp2 = get_aexpr(self.expr2, program, function).data
+            tmp2 = get_expr(self.expr2, int, program, function).data
             if tmp1 < len(var.data):
                 if tmp2 >= len(var.data[tmp1]):
                     var.data[tmp1].extend([None for i in range(tmp2 - len(var.data[tmp1]))])
-                else: raise Exception('Runtime error.')
-            else: raise Exception('Index out of range.')
+                else:
+                    program.set_exception('Runtime error.')
+                    raise Exception('Runtime error.')
+            else:
+                program.set_exception('Index out of range.')
+                raise Exception('Index out of range.')
         else:
-            var = get_lvar(self.ident, program, function)
+            var = get_var(self.ident, program, function)
             if var.data:
                 if tmp1 >= len(var.data):
                     var.data[tmp1].extend([None for i in range(tmp1 - len(var.data))])
-                else: raise Exception('Runtime error.')
+                else:
+                    program.set_exception('Runtime error.')
+                    raise Exception('Runtime error.')
             elif var.dimensions() == 2:
                 var.data = [[] for i in range(tmp1)]
             elif var.dimensions() == 1:
                 var.data = [None for i in range(tmp1)]
+
+    def __str__(self):
+        return 'Extend: {}[{}][{}]'.format(self.ident, self.expr1, self.expr2)
 
 class Brackets(Expression):
 
@@ -386,32 +372,24 @@ class Brackets(Expression):
         self.expr1 = i
         self.expr2 = j
 
-    def __repr__(self):
+    def __str__(self):
         out = '{}[{}]'.format(self.ident, self.expr1)
         if self.expr2:
             out += '[{}]'.format(self.expr2)
         return out
 
     def Solve(self, program, function) -> Var:
-        var = get_rvar(self.ident, program, function)
-        tmp1 = get_aexpr(self.expr1, program, function).data
+        var = get_decvar(self.ident, program, function)
+        tmp1 = get_expr(self.expr1, int, program, function).data
         if self.expr2 and var.check_dimensions(2):
-            tmp2 = get_aexpr(self.expr2, program, function).data
+            tmp2 = get_expr(self.expr2, int, program, function).data
             return var[tmp1][tmp2]
         else:
             var.check_dimensions(1)
             return var[tmp1]
 
     def _type(self, program, function):
-        return get_rvar(self.ident, program, function).type
-
-class Print:
-
-    def __init__(self, ident) -> None:
-        self.ident = ident
-
-    def execute(self, program, function):
-        print(get_lvar(self.ident, program, function))
+        return get_decvar(self.ident, program, function).type
 
 class Line:
 
@@ -421,35 +399,34 @@ class Line:
     def interpretate(self, program, function):
         line = self.statement
         if type(line) == Var:
-            line.init(program, function)
+            line.run_var_init(program, function)
             if function:
                 function.vars[line.id] = line
             else:
                 program.vars[line.id] = line
         elif type(line) == Function:
             if program.functions.get(line.id):
-                raise Exception('Funtion already declarated.')
-            else:
-                line.init(program)
-                program.functions[line.id] = line
+                program.set_exception('Function already declarated.')
+                raise Exception('Function already declarated.')
+            line.run_func_init(program)
+            program.functions[line.id] = line
+        elif type(line) == Condition:
+            line.run_cond(program, function)
+        elif type(line) == While:
+            line.run_while(program, function)
+        elif type(line) == Fcall:
+            line.run_fcall(program, function)
         elif type(line) == Assign:
-            line.execute(program, function)
+            line.run_assign(program, function)
         elif isinstance(line, Expression):
             line.Solve(program, function)
-        elif type(line) == Condition:
-            line.run(program, function)
-        elif type(line) == While:
-            line.run(program, function)
         elif type(line) == EXTEND:
-            line.execute(program, function)
-        elif type(line) == Fcall:
-            line.run(program, function)
-        elif line == 'UNDO':
-            pass
+            line.run_extend(program, function)
         elif type(line) == Print:
-            line.execute(self, None)
-        else:
-            raise Exception('')
+            line.execute(program, function)
+
+    def __str__(self):
+        return str(self.statement)
 
 class Condition:
     
@@ -457,66 +434,85 @@ class Condition:
         self.expr = expr
         self.then = then
         self._else = _else
+        self.cur_inst = [0, self.expr]
 
-    def __repr__(self):
-        out = 'if ' + str(self.expr) + ' then: {\n\t'
-        out += '\n'.join([str(i) for i in self.then]).replace('\n', '\n\t') + '\n}'
-        if self._else:
-            out += ' else: {\n\t'
-            out += '\n'.join([str(i) for i in self._else]).replace('\n', '\n\t') + '\n}'
-        return out
-
-    def run(self, program, function):
-        if get_lexpr(self.expr, program, function).data:
+    def run_cond(self, program, function):
+        if get_expr(self.expr, bool, program, function).data:
             exe_gr = self.then
         else:
             exe_gr = self._else
         if exe_gr:
-            for line in exe_gr:
-                line.interpretate(program, function)
+            for i in range(len(exe_gr)):
+                self.cur_inst = [i+1, exe_gr[i]]
+                exe_gr[i].interpretate(program, function)
+    
+    def __str__(self):
+        return 'condition, in instance #{}; In {}'.format(self.cur_inst[0], self.cur_inst[1])
 
 class While:
     
     def __init__(self, expr, do) -> None:
         self.expr = expr
         self.do = do
+        self.cur_inst = [0, self.expr]
 
-    def __repr__(self):
-        out = 'while ' + str(self.expr) + ': {\n\t'
-        out += '\n'.join([str(i) for i in self.do]).replace('\n', '\n\t') + '\n}'
-        return out
+    def run_while(self, program, function):
+        while get_expr(self.expr, bool, program, function).data:
+            if len(self.do) == 0:
+                program.set_exception('Infinite loop.')
+                raise Exception('Infinite loop.')
+            for i in range(len(self.do)):
+                self.cur_inst = [i+1, self.do]
+                self.do[i].interpretate(program, function)
 
-    def run(self, program, function):
-        while get_lexpr(self.expr, program, function).data == True:
-            for line in self.do:
-                line.interpretate(program, function)
+    def __str__(self):
+        return 'while, in inst #{}; In {}'.format(self.cur_inst[0], self.cur_inst[1])
 
-class Fcall:
+class Vector:
 
-    def __init__(self, ident, pars, vars):
-        self.ident = ident
-        self.pars = pars
-        self.vars = vars
+    def __init__(self, x: int, y: int) -> None:
+        self.x = x
+        self.y = y
 
-    def run(self, program, function):
-        func = program.check_func_decl(self.ident)
-        func.check_input(self.pars, program, function)
-        func.check_out(self.vars, program, function)
-        func = func.copy()
-        args = [expr.Solve(program, function).data if expr else None for expr in self.pars]
-        res = func.run(args, program)
-        for i, ident in enumerate(self.vars):
-            if ident:
-                if type(ident) == Brackets:
-                    var = ident.Solve(program, function)
-                    var.data = res[i]
-                else:
-                    var = get_lvar(ident, program, function)
-                    var._const()
-                    var.data = res[i]
+    def __add__(self, arg):
+        return Vector(self.x + arg.x, self.y + arg.y)
+    
+    def __iadd__(self, arg):
+        self.x += arg.x
+        self.y += arg.y
 
-    def __repr__(self):
-        return 'fcall     | ID: {} | Parameters: {} | Vars: {}\t'.format(self.ident + ' '*(10-len(self.ident)), self.pars, self.vars)
+    def __isub__(self, arg):
+        self.x -= arg.x
+        self.y -= arg.y
+
+    def rotate(self, direction):
+        x, y = self.x, self.y
+        if direction == 'F':
+            pass
+        elif direction == 'B':
+            x, y = -x, -y
+        elif direction == 'R':
+            x, y = -y, x
+        elif direction == 'L':
+            x, y = y, -x
+        return Vector(x, y)
+
+class map_container:
+
+    def __init__(self, map: list) -> None:
+        self.map = map
+
+    def __getitem__(self, pair: Vector) -> str:
+        tmp = self.map.get(pair.y)
+        if tmp and tmp.get(pair.x):
+            return tmp[pair.x]
+        else:
+            return '#'
+
+    def __setitem__(self, pair: Vector, val) -> str:
+        tmp = self.map.get(pair.y)
+        if tmp and tmp.get(pair.x):
+            tmp[pair.x] = val
 
 class Prog:
 
@@ -524,44 +520,126 @@ class Prog:
         self.vars = dict()
         self.functions = dict()
         self.script = lines
-        self.robot_map = None
 
-    def execute(self, Map):
-        if not Map:
+        self.map = None
+        self.cur = Vector(0, 0)
+        self.direct = Vector(1, 0)
+        self.exit = Vector(0, 0)
+        self.undo_stack = []
+
+        self.cur_inst = [0, 'Loading map.']
+        self.exception = None
+
+    def find_exit(self, file):
+        tmp = [[i for i in line] for line in file]
+        self.map = map_container(tmp)
+        self.cur = [Vector(j, i) for i in range(len(tmp)) for j in range(len(tmp[i])) if tmp[i][j] == 'S'].pop()
+        self.exit = [Vector(j, i) for i in range(len(tmp)) for j in range(len(tmp[i])) if tmp[i][j] == 'F'].pop()
+        self.map[self.cur] = ' '
+        self.map[self.exit] = ' '
+        if not self.map:
+            self.set_exception('Error in loading map.')
             raise Exception('Error in loading map.')
-        self.robot_map = Map
-        for line in self.script:
-            line.interpretate(self, None)
-
-    def push(self, direction):
-        pass
-
-    def get(self, direction):
-        pass
-
-    def move(self, direction):
-        pass
-
-    def check_var_decl(self, ident) -> Var:
-        if self.vars.get(ident):
-            return self.vars[ident]
-        else:
-            raise Exception('Variable not declarated.')
+        self.robot_map = self.map
+        for i in range(len(self.script)):
+            self.cur_inst = [i+1, self.script[i]]
+            self.script[i].interpretate(self, None)
 
     def check_func_decl(self, ident) -> Function:
         if self.functions.get(ident):
             return self.functions[ident]
         else:
+            self.set_exception('Function not declarated.')
             raise Exception('Function not declarated.')
 
-    def __str__(self):
-        return 'Program tree:\n\t' + '\n'.join([str(i) for i in self.script]).replace('\n', '\n\t')
+    def push(self, direction):
+        self.direct = self.direct.rotate(direction)
 
-    def __repr__(self):
-        out = 'Program tree:\n\t' + '\n'.join([str(i) for i in self.script]).replace('\n', '\n\t')
-        out += '\nDeclarated Local Variables:\n\t' + '\n\t'.join([str(i) for i in self.vars])
-        out += '\nDeclarated Functions:\n\t' + '\n\t'.join([str(i) for i in self.functions])
-        return out
+        if self.map[self.direct + self.cur] == '#':
+            if self.map[self.direct + self.direct + self.cur] == '#':
+                return False
+            else:
+                self.map[self.direct + self.cur] = ' '
+                self.map[self.direct + self.direct + self.cur] = '#'
+                self.undo_stack.append([self.direct + self.cur, self.direct + self.direct + self.cur])
+                self.cur += self.direct
+        else:
+            self.cur += self.direct
+        if self.cur == self.exit:
+            self.exception = 'Robot found root.'
+            raise
+        return
+
+    def get(self, direction):
+        tmp = self.direct.rotate(direction)
+        x, y = self.exit.x - self.direct.x, self.exit.y - self.direct.y
+        if tmp.x == 0:
+            if y*tmp.y > 0 or y == 0: return y
+            else: return maxint
+        else:
+            if x*tmp.x > 0 or x == 0: return x
+            else: return maxint
+        
+
+    def move(self, direction):
+        self.direct = self.direct.rotate(direction)
+
+        if self.map[self.direct + self.cur] == '#':
+            return False
+        if self.cur == self.exit:
+            self.exception = 'Robot found root.'
+            raise
+        self.cur += self.direct
+        self.undo_stack.clear()
+        return True
+
+    def undo(self):
+        tmp = self.undo_stack.pop()
+        self.map[tmp[1]] = ' '
+        self.map[tmp[0]] = '#'
+        self.cur -= self.direct
+
+    def set_exception(self, text):
+        self.exception = 'Exception in program instance #{}. In {}. {}'.format(self.cur_inst[0], self.cur_inst[1], text)
+
+    def __str__(self):
+        return '\n'.join([str(i) for i in self.script])
+
+class Fcall:
+
+    def __init__(self, ident, pars, vars):
+        self.ident = ident
+        self.pars = pars # [expr...]
+        self.vars = vars # [id...]
+
+    def run_fcall(self, program: Prog, function: Function):
+        self.cur_inst = 'function ' + self.ident + ' not declarated'
+        func = program.check_func_decl(self.ident)
+        func.check_call(self.pars, self.vars, program, function)
+        args = [expr.Solve(program, function).data if expr else None for expr in self.pars]
+        func = func.duplicate()
+        self.cur_inst = func
+        res = func.run(args, program)
+        for i in range(len(self.vars)):
+            if self.vars[i]:
+                if type(self.vars[i]) == Brackets:
+                    var = self.vars[i].Solve(program, function)
+                    var.data = res[i]
+                else:
+                    var = get_var(self.vars[i], program, function)
+                    var._const()
+                    var.data = res[i]
+
+    def __str__(self):
+        return 'fcall, {}'.format(self.cur_inst)
+
+class Print:
+
+    def __init__(self, ident) -> None:
+        self.ident = ident
+
+    def execute(self, program, function):
+        print(get_var(self.ident, program, function).__repr__())
 
 
 def _OR(first, second) -> Expression:
@@ -637,7 +715,7 @@ def p_prog(p):
                 p[0] = Prog(p[2])
             else:
                 p[0] = Prog([p[2]])
-        else: p[0] = None
+        else: p[0] = Prog([])
 
 def p_prog_fdecl(p):
     '''prog : prog fdecl es'''
@@ -647,7 +725,7 @@ def p_prog_fdecl(p):
         p[0] = p[1]
     elif p[2]:
             p[0] = Prog([Line(p[2])])
-    else: p[0] = None
+    else: p[0] = Prog([])
     
 
 def p_prog_empty(p):
@@ -662,10 +740,12 @@ def p_line(p):
     '''line : sent
             | logic
             | fcall
-            | group
             | decl
             | cdecl'''
     p[0] = Line(p[1])
+
+def p_line_gr(p):
+    '''line : group'''
 
 def p_line_empty(p):
     '''line : '''
@@ -699,15 +779,15 @@ def p_group(p):
     if len(p) == 5:
         if p[2]:
             if type(p[3]) == list:
-                p[0] = p[2] + p[3]
+                p[2].extend(p[3])
             else:
-                p[0] = p[2] + [Line(p[3])]
+                p[2].append(p[3])
+            p[0] = p[2]
         else:
             if type(p[3]) == list:
                 p[0] = p[3]
             else:
-                p[0] = [Line(p[3])]
-        p[0] = p[2]
+                p[0] = [p[3]]
     else:
         p[0] = p[2]
 
@@ -718,13 +798,13 @@ def p_lines(p):
             if type(p[2]) == list:
                 p[1].extend(p[2])
             else:
-                p[1].append(Line(p[2]))
+                p[1].append(p[2])
         p[0] = p[1]
     elif p[2]:
         if type(p[2]) == list:
             p[0] = p[2]
         else:
-            p[0] = [Line(p[2])]
+            p[0] = [p[2]]
     else: 
         p[0] = None
 
@@ -1023,12 +1103,12 @@ def build_tree(code) -> Prog:
 
 prog = build_tree(text+'\n')
 
-input_file = open('map.txt')
-Map = [[j for j in i if j != '\n'] for i in input_file]
+map_file = open('map.txt')
 
-print(prog.__repr__())
+prog.find_exit(map_file)
 
-prog.execute(Map)
-
-#-------------------------------------------------------------
+# try:
+#     prog.find_exit(map_file)
+# except Exception as e:
+#     print(e)
 

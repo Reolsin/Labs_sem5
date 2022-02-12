@@ -11,9 +11,9 @@ Rule 5     es -> ES
 Rule 6     line -> sent
 Rule 7     line -> logic
 Rule 8     line -> fcall
-Rule 9     line -> group
-Rule 10    line -> decl
-Rule 11    line -> cdecl
+Rule 9     line -> decl
+Rule 10    line -> cdecl
+Rule 11    line -> group
 Rule 12    line -> <empty>
 Rule 13    sent -> PRINT ID
 Rule 14    sent -> ID EQ expr
@@ -152,10 +152,10 @@ access               : 15 73 88 89
 arrs                 : 43 45 48 49
 avdecl               : 29
 cadecl               : 31
-cdecl                : 11
+cdecl                : 10
 cldecl               : 30
 cond                 : 76
-decl                 : 10
+decl                 : 9
 else                 : 78 79
 es                   : 1 2 4 4 22
 expr                 : 14 15 16 17 17 18 32 33 35 37 46 47 53 56 57 63 64 65 65 66 66 67 72 74 74 75 78 79 83 84 92 94
@@ -164,7 +164,7 @@ fdecl                : 2
 fivars               : 52
 fovars               : 52
 fvars                : 54 55 57
-group                : 9 52 79 81 84
+group                : 11 52 79 81 84
 line                 : 1 20 22
 lines                : 20 21 22
 logic                : 7
@@ -226,9 +226,9 @@ state 1
     (6) line -> . sent
     (7) line -> . logic
     (8) line -> . fcall
-    (9) line -> . group
-    (10) line -> . decl
-    (11) line -> . cdecl
+    (9) line -> . decl
+    (10) line -> . cdecl
+    (11) line -> . group
     (12) line -> .
     (52) fdecl -> . fovars FUNCTION ID fivars group
     (13) sent -> . PRINT ID
@@ -241,8 +241,6 @@ state 1
     (76) logic -> . cond
     (77) logic -> . loop
     (85) fcall -> . SOPEN vars SCLOSE EQ ID OPEN pars CLOSE
-    (20) group -> . FOPEN lines line FCLOSE
-    (21) group -> . FOPEN lines FCLOSE
     (24) decl -> . 2ldecl
     (25) decl -> . 2adecl
     (26) decl -> . 1ldecl
@@ -251,6 +249,8 @@ state 1
     (29) decl -> . avdecl
     (30) cdecl -> . cldecl
     (31) cdecl -> . cadecl
+    (20) group -> . FOPEN lines line FCLOSE
+    (21) group -> . FOPEN lines FCLOSE
     (53) fovars -> . ID EQ expr
     (54) fovars -> . SOPEN fvars SCLOSE
     (74) access -> . ID OPEN expr COMA expr CLOSE
@@ -296,7 +296,7 @@ state 1
     EXTEND2         shift and go to state 16
     UNDO            shift and go to state 17
     SOPEN           shift and go to state 20
-    FOPEN           shift and go to state 22
+    FOPEN           shift and go to state 30
     ACONST          shift and go to state 32
     LCONST          shift and go to state 33
     NOT             shift and go to state 34
@@ -323,22 +323,22 @@ state 1
     sent                           shift and go to state 4
     logic                          shift and go to state 5
     fcall                          shift and go to state 6
-    group                          shift and go to state 7
-    decl                           shift and go to state 8
-    cdecl                          shift and go to state 9
+    decl                           shift and go to state 7
+    cdecl                          shift and go to state 8
+    group                          shift and go to state 9
     fovars                         shift and go to state 10
     expr                           shift and go to state 13
     access                         shift and go to state 14
     cond                           shift and go to state 18
     loop                           shift and go to state 19
-    2ldecl                         shift and go to state 23
-    2adecl                         shift and go to state 24
-    1ldecl                         shift and go to state 25
-    1adecl                         shift and go to state 26
-    lvdecl                         shift and go to state 27
-    avdecl                         shift and go to state 28
-    cldecl                         shift and go to state 29
-    cadecl                         shift and go to state 30
+    2ldecl                         shift and go to state 22
+    2adecl                         shift and go to state 23
+    1ldecl                         shift and go to state 24
+    1adecl                         shift and go to state 25
+    lvdecl                         shift and go to state 26
+    avdecl                         shift and go to state 27
+    cldecl                         shift and go to state 28
+    cadecl                         shift and go to state 29
     oper                           shift and go to state 31
 
 state 2
@@ -387,26 +387,26 @@ state 6
 
 state 7
 
-    (9) line -> group .
+    (9) line -> decl .
 
-    ES              reduce using rule 9 (line -> group .)
-    FCLOSE          reduce using rule 9 (line -> group .)
+    ES              reduce using rule 9 (line -> decl .)
+    FCLOSE          reduce using rule 9 (line -> decl .)
 
 
 state 8
 
-    (10) line -> decl .
+    (10) line -> cdecl .
 
-    ES              reduce using rule 10 (line -> decl .)
-    FCLOSE          reduce using rule 10 (line -> decl .)
+    ES              reduce using rule 10 (line -> cdecl .)
+    FCLOSE          reduce using rule 10 (line -> cdecl .)
 
 
 state 9
 
-    (11) line -> cdecl .
+    (11) line -> group .
 
-    ES              reduce using rule 11 (line -> cdecl .)
-    FCLOSE          reduce using rule 11 (line -> cdecl .)
+    ES              reduce using rule 11 (line -> group .)
+    FCLOSE          reduce using rule 11 (line -> group .)
 
 
 state 10
@@ -569,6 +569,70 @@ state 21
 
 state 22
 
+    (24) decl -> 2ldecl .
+
+    ES              reduce using rule 24 (decl -> 2ldecl .)
+    FCLOSE          reduce using rule 24 (decl -> 2ldecl .)
+
+
+state 23
+
+    (25) decl -> 2adecl .
+
+    ES              reduce using rule 25 (decl -> 2adecl .)
+    FCLOSE          reduce using rule 25 (decl -> 2adecl .)
+
+
+state 24
+
+    (26) decl -> 1ldecl .
+
+    ES              reduce using rule 26 (decl -> 1ldecl .)
+    FCLOSE          reduce using rule 26 (decl -> 1ldecl .)
+
+
+state 25
+
+    (27) decl -> 1adecl .
+
+    ES              reduce using rule 27 (decl -> 1adecl .)
+    FCLOSE          reduce using rule 27 (decl -> 1adecl .)
+
+
+state 26
+
+    (28) decl -> lvdecl .
+
+    ES              reduce using rule 28 (decl -> lvdecl .)
+    FCLOSE          reduce using rule 28 (decl -> lvdecl .)
+
+
+state 27
+
+    (29) decl -> avdecl .
+
+    ES              reduce using rule 29 (decl -> avdecl .)
+    FCLOSE          reduce using rule 29 (decl -> avdecl .)
+
+
+state 28
+
+    (30) cdecl -> cldecl .
+
+    ES              reduce using rule 30 (cdecl -> cldecl .)
+    FCLOSE          reduce using rule 30 (cdecl -> cldecl .)
+
+
+state 29
+
+    (31) cdecl -> cadecl .
+
+    ES              reduce using rule 31 (cdecl -> cadecl .)
+    FCLOSE          reduce using rule 31 (cdecl -> cadecl .)
+
+
+state 30
+
     (20) group -> FOPEN . lines line FCLOSE
     (21) group -> FOPEN . lines FCLOSE
     (22) lines -> . lines line es
@@ -605,70 +669,6 @@ state 22
     ES              reduce using rule 23 (lines -> .)
 
     lines                          shift and go to state 71
-
-state 23
-
-    (24) decl -> 2ldecl .
-
-    ES              reduce using rule 24 (decl -> 2ldecl .)
-    FCLOSE          reduce using rule 24 (decl -> 2ldecl .)
-
-
-state 24
-
-    (25) decl -> 2adecl .
-
-    ES              reduce using rule 25 (decl -> 2adecl .)
-    FCLOSE          reduce using rule 25 (decl -> 2adecl .)
-
-
-state 25
-
-    (26) decl -> 1ldecl .
-
-    ES              reduce using rule 26 (decl -> 1ldecl .)
-    FCLOSE          reduce using rule 26 (decl -> 1ldecl .)
-
-
-state 26
-
-    (27) decl -> 1adecl .
-
-    ES              reduce using rule 27 (decl -> 1adecl .)
-    FCLOSE          reduce using rule 27 (decl -> 1adecl .)
-
-
-state 27
-
-    (28) decl -> lvdecl .
-
-    ES              reduce using rule 28 (decl -> lvdecl .)
-    FCLOSE          reduce using rule 28 (decl -> lvdecl .)
-
-
-state 28
-
-    (29) decl -> avdecl .
-
-    ES              reduce using rule 29 (decl -> avdecl .)
-    FCLOSE          reduce using rule 29 (decl -> avdecl .)
-
-
-state 29
-
-    (30) cdecl -> cldecl .
-
-    ES              reduce using rule 30 (cdecl -> cldecl .)
-    FCLOSE          reduce using rule 30 (cdecl -> cldecl .)
-
-
-state 30
-
-    (31) cdecl -> cadecl .
-
-    ES              reduce using rule 31 (cdecl -> cadecl .)
-    FCLOSE          reduce using rule 31 (cdecl -> cadecl .)
-
 
 state 31
 
@@ -1638,9 +1638,9 @@ state 71
     (6) line -> . sent
     (7) line -> . logic
     (8) line -> . fcall
-    (9) line -> . group
-    (10) line -> . decl
-    (11) line -> . cdecl
+    (9) line -> . decl
+    (10) line -> . cdecl
+    (11) line -> . group
     (12) line -> .
     (13) sent -> . PRINT ID
     (14) sent -> . ID EQ expr
@@ -1652,8 +1652,6 @@ state 71
     (76) logic -> . cond
     (77) logic -> . loop
     (85) fcall -> . SOPEN vars SCLOSE EQ ID OPEN pars CLOSE
-    (20) group -> . FOPEN lines line FCLOSE
-    (21) group -> . FOPEN lines FCLOSE
     (24) decl -> . 2ldecl
     (25) decl -> . 2adecl
     (26) decl -> . 1ldecl
@@ -1662,6 +1660,8 @@ state 71
     (29) decl -> . avdecl
     (30) cdecl -> . cldecl
     (31) cdecl -> . cadecl
+    (20) group -> . FOPEN lines line FCLOSE
+    (21) group -> . FOPEN lines FCLOSE
     (74) access -> . ID OPEN expr COMA expr CLOSE
     (75) access -> . ID OPEN expr CLOSE
     (59) expr -> . oper
@@ -1707,7 +1707,7 @@ state 71
     EXTEND2         shift and go to state 16
     UNDO            shift and go to state 17
     SOPEN           shift and go to state 106
-    FOPEN           shift and go to state 22
+    FOPEN           shift and go to state 30
     ACONST          shift and go to state 32
     LCONST          shift and go to state 33
     NOT             shift and go to state 34
@@ -1735,21 +1735,21 @@ state 71
     sent                           shift and go to state 4
     logic                          shift and go to state 5
     fcall                          shift and go to state 6
-    group                          shift and go to state 7
-    decl                           shift and go to state 8
-    cdecl                          shift and go to state 9
+    decl                           shift and go to state 7
+    cdecl                          shift and go to state 8
+    group                          shift and go to state 9
     expr                           shift and go to state 13
     access                         shift and go to state 14
     cond                           shift and go to state 18
     loop                           shift and go to state 19
-    2ldecl                         shift and go to state 23
-    2adecl                         shift and go to state 24
-    1ldecl                         shift and go to state 25
-    1adecl                         shift and go to state 26
-    lvdecl                         shift and go to state 27
-    avdecl                         shift and go to state 28
-    cldecl                         shift and go to state 29
-    cadecl                         shift and go to state 30
+    2ldecl                         shift and go to state 22
+    2adecl                         shift and go to state 23
+    1ldecl                         shift and go to state 24
+    1adecl                         shift and go to state 25
+    lvdecl                         shift and go to state 26
+    avdecl                         shift and go to state 27
+    cldecl                         shift and go to state 28
+    cadecl                         shift and go to state 29
     oper                           shift and go to state 31
 
 state 72
@@ -1872,7 +1872,7 @@ state 74
     EXTEND1         shift and go to state 15
     EXTEND2         shift and go to state 16
     UNDO            shift and go to state 17
-    FOPEN           shift and go to state 22
+    FOPEN           shift and go to state 30
     ACONST          shift and go to state 32
     LCONST          shift and go to state 33
     NOT             shift and go to state 34
@@ -2531,7 +2531,7 @@ state 109
     EXTEND1         shift and go to state 15
     EXTEND2         shift and go to state 16
     UNDO            shift and go to state 17
-    FOPEN           shift and go to state 22
+    FOPEN           shift and go to state 30
     ACONST          shift and go to state 32
     LCONST          shift and go to state 33
     NOT             shift and go to state 34
@@ -2771,7 +2771,7 @@ state 119
     (20) group -> . FOPEN lines line FCLOSE
     (21) group -> . FOPEN lines FCLOSE
 
-    FOPEN           shift and go to state 22
+    FOPEN           shift and go to state 30
 
     group                          shift and go to state 144
 
@@ -3038,7 +3038,7 @@ state 132
     EXTEND1         shift and go to state 15
     EXTEND2         shift and go to state 16
     UNDO            shift and go to state 17
-    FOPEN           shift and go to state 22
+    FOPEN           shift and go to state 30
     ACONST          shift and go to state 32
     LCONST          shift and go to state 33
     NOT             shift and go to state 34
