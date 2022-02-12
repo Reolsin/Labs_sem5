@@ -156,18 +156,15 @@ PRINT a
 PRINT a
 '''
 
+#robot prog
 text = '''
-UINT a
-UINT c = 123
+WHILE LEFT DO BACK
 
-f = 0 FUNCTION b(one = 0, two = 4){
-    UINT a
-    UINT c = 123
-    UINT d = TRUE
-    PRINT d
+WHILE TRUE DO {
+    IF RIGHT {
+        WHILE LEFT DO {}
+    }
 }
-
-[a] = b(,)
 '''
 
 #fibonachi

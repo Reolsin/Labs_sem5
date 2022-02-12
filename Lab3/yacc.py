@@ -458,9 +458,6 @@ class While:
 
     def run_while(self, program, function):
         while get_expr(self.expr, bool, program, function).data:
-            if len(self.do) == 0:
-                program.set_exception('Infinite loop.')
-                raise Exception('Infinite loop.')
             for i in range(len(self.do)):
                 self.cur_inst = [i+1, self.do]
                 self.do[i].interpretate(program, function)
@@ -480,10 +477,15 @@ class Vector:
     def __iadd__(self, arg):
         self.x += arg.x
         self.y += arg.y
+        return self
 
     def __isub__(self, arg):
         self.x -= arg.x
         self.y -= arg.y
+        return self
+
+    def __eq__(self, arg):
+        return self.x == arg.x and self.y == arg.y
 
     def rotate(self, direction):
         x, y = self.x, self.y
@@ -502,17 +504,21 @@ class map_container:
     def __init__(self, map: list) -> None:
         self.map = map
 
-    def __getitem__(self, pair: Vector) -> str:
-        tmp = self.map.get(pair.y)
-        if tmp and tmp.get(pair.x):
-            return tmp[pair.x]
+    def get(self, pair: Vector):
+        if (pair.y < len(self.map) and pair.y >= 0) and (pair.x < len(self.map[pair.y]) and pair.x >= 0):
+            return self.map[pair.y][pair.x]
         else:
-            return '#'
+            return None
+    
+    def __getitem__(self, pair: Vector) -> str:
+        tmp = self.get(pair)
+        if tmp: return tmp
+        else: return '#'
 
     def __setitem__(self, pair: Vector, val) -> str:
-        tmp = self.map.get(pair.y)
-        if tmp and tmp.get(pair.x):
-            tmp[pair.x] = val
+        tmp = self.get(pair)
+        if tmp: self.map[pair.y][pair.x] = val
+
 
 class Prog:
 
@@ -526,12 +532,13 @@ class Prog:
         self.direct = Vector(1, 0)
         self.exit = Vector(0, 0)
         self.undo_stack = []
+        self.root = []
 
         self.cur_inst = [0, 'Loading map.']
         self.exception = None
 
     def find_exit(self, file):
-        tmp = [[i for i in line] for line in file]
+        tmp = [[i for i in line if i != '\n'] for line in file]
         self.map = map_container(tmp)
         self.cur = [Vector(j, i) for i in range(len(tmp)) for j in range(len(tmp[i])) if tmp[i][j] == 'S'].pop()
         self.exit = [Vector(j, i) for i in range(len(tmp)) for j in range(len(tmp[i])) if tmp[i][j] == 'F'].pop()
@@ -562,13 +569,12 @@ class Prog:
                 self.map[self.direct + self.cur] = ' '
                 self.map[self.direct + self.direct + self.cur] = '#'
                 self.undo_stack.append([self.direct + self.cur, self.direct + self.direct + self.cur])
-                self.cur += self.direct
-        else:
-            self.cur += self.direct
+        self.root.append(self.cur)
+        self.cur += self.direct
         if self.cur == self.exit:
             self.exception = 'Robot found root.'
             raise
-        return
+        return True
 
     def get(self, direction):
         tmp = self.direct.rotate(direction)
@@ -579,18 +585,19 @@ class Prog:
         else:
             if x*tmp.x > 0 or x == 0: return x
             else: return maxint
-        
 
     def move(self, direction):
         self.direct = self.direct.rotate(direction)
 
         if self.map[self.direct + self.cur] == '#':
             return False
-        if self.cur == self.exit:
-            self.exception = 'Robot found root.'
-            raise
         self.cur += self.direct
         self.undo_stack.clear()
+        self.root.append(Vector(self.cur.x, self.cur.y))
+        if self.cur == self.exit:
+            self.exception = 'Robot found root.'
+            print('\n'.join([''.join(['*' if Vector(j, i) in self.root else self.map.map[i][j] for j in range(len(self.map.map[i]))]) for i in range(len(self.map.map))]))
+            raise
         return True
 
     def undo(self):
@@ -957,14 +964,14 @@ def p_expr(p):
             | expr OR expr
             | OPEN expr CLOSE'''
     if len(p) == 2:
-        if p[1].isdigit():
-            p[0] = VAL(int, int(p[1]))
+        if type(p[1]) == Oper:
+            p[0] = p[1]
         elif p[1] == 'TRUE' or p[1] == 'FALSE':
             if p[1] == 'TRUE': p[1] = True
             else: p[1] = False
             p[0] = VAL(bool, p[1])
-        elif type(p[1]) == Oper:
-            p[0] = p[1]
+        elif p[1].isdigit():
+            p[0] = VAL(int, int(p[1]))
         else:
             p[0] = VAL(Var, p[1])
     elif len(p) == 3:
@@ -1104,8 +1111,12 @@ def build_tree(code) -> Prog:
 prog = build_tree(text+'\n')
 
 map_file = open('map.txt')
+try:
+    prog.find_exit(map_file)
 
-prog.find_exit(map_file)
+except Exception as e:
+    print(e)
+    print(prog.exception)
 
 # try:
 #     prog.find_exit(map_file)
