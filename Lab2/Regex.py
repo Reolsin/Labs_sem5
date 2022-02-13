@@ -90,7 +90,8 @@ class regex:
 
 
     def compile(self):
-        self.dfa = DFA_builder(NFA_builder(self.tree), self.ABC)
+        self.nfa = NFA_builder(self.tree)
+        self.dfa = DFA_builder(self.nfa, self.ABC)
         self.dfa = min_DFA2(self.dfa, self.ABC)
 
     def inversion(self):
@@ -136,7 +137,7 @@ class regex:
 '((a|bd*c)*bd*|a*)*'
 '((a)*)*'
 '(a|bd*c)*bd*|(a|bd*c)*'
-regx = 'ds*'
+regx = '(a|bd*c)*bd*|(a|bd*c)*'
 regx = '(' + regx + ')'
 tokens, ABC = Parser(regx)
 tree = tree_builder(tokens)
@@ -163,6 +164,7 @@ add = source.addition(set(['d']))
 print('Regex: ', source.regex)
 print('Tree: ', source.tree)
 print('Alphabet ', source.ABC)
+print('DFA: ', source.nfa)
 print('DFA: ', source.dfa)
 print(source.dfa_passage(s))
 print(source.tree_match(s))

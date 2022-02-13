@@ -1,16 +1,3 @@
-TERMINALS:
-    'OPEN', 'CLOSE', 'FOPEN', 'FCLOSE', 'SOPEN', 'SCLOSE', 'COMA', 'COMD', 'ES', 'EQ',
-    'AVAR', 'LVAR', 'A1ARR', 'L1ARR', 'A2ARR', 'L2ARR',
-    'CAVAR', 'CLVAR',
-    'LCONST', 'ACONST',
-    'MOVE', 'GET', 'PUSH', 'UNDO',
-    'EXTEND1', 'EXTEND2', 'SIZE1', 'SIZE2',
-    'IF', 'ELSE', 'WHILE', 'DO', 'FUNCTION',
-    'INCDEC', 'NOT', 'OR', 'GTLT',
-    'ID',
-
-
-
 prog : prog line ES
      | prog fdecl ES
      | prog ES
